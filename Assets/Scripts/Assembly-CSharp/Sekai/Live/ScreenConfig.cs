@@ -48,6 +48,15 @@ namespace Sekai.Live
 
 		public static ResolutionQuality CurrentResolutionQuality { get; private set; } = ResolutionQuality.Default;
 
+		[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+		private static void InitializeStandaloneResolution()
+		{
+			if (ShouldRestoreStandaloneDefaultResolution())
+			{
+				Screen.SetResolution(DefaultSize.width, DefaultSize.height, Screen.fullScreenMode);
+			}
+		}
+
 		public static void DownResolution(MVQualityType qualityType)
 		{
 			DownResolution(qualityType == MVQualityType.High ? ResolutionQuality.High : qualityType == MVQualityType.Middle ? ResolutionQuality.Middle : ResolutionQuality.Low);
@@ -57,7 +66,14 @@ namespace Sekai.Live
 		{
 			CurrentResolutionQuality = resolutionQuality;
 			var size = resolutionQuality == ResolutionQuality.Low ? LowDPISize : DefaultSize;
-			Screen.SetResolution(size.width, size.height, Screen.fullScreenMode);
+			if (ShouldApplyMobileResolution())
+			{
+				Screen.SetResolution(size.width, size.height, Screen.fullScreenMode);
+			}
+			else if (ShouldRestoreStandaloneDefaultResolution())
+			{
+				Screen.SetResolution(DefaultSize.width, DefaultSize.height, Screen.fullScreenMode);
+			}
 		}
 
 		public static void DownResolutionStreaming(ResolutionQuality resolutionQuality)
@@ -68,7 +84,28 @@ namespace Sekai.Live
 		public static void ResetResolution()
 		{
 			CurrentResolutionQuality = ResolutionQuality.Default;
-			Screen.SetResolution(DefaultSize.width, DefaultSize.height, Screen.fullScreenMode);
+			if (ShouldApplyMobileResolution() || ShouldRestoreStandaloneDefaultResolution())
+			{
+				Screen.SetResolution(DefaultSize.width, DefaultSize.height, Screen.fullScreenMode);
+			}
+		}
+
+		private static bool ShouldApplyMobileResolution()
+		{
+#if UNITY_ANDROID || UNITY_IOS
+			return true;
+#else
+			return false;
+#endif
+		}
+
+		private static bool ShouldRestoreStandaloneDefaultResolution()
+		{
+#if UNITY_STANDALONE && !UNITY_EDITOR
+			return true;
+#else
+			return false;
+#endif
 		}
 	}
 }

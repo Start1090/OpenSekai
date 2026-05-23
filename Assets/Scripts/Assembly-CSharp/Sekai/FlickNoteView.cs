@@ -44,7 +44,7 @@ namespace Sekai
 			currentArrow = useSlan ? slanArrow : defaultArrow;
 			currentMoveRoot = useSlan ? slanMoveRoot : defaultMoveRoot;
 
-			Transform directionRoot = useSlan ? slanRoot : currentArrow != null ? currentArrow.transform : null;
+			Transform directionRoot = slanRoot;
 			if (directionRoot != null)
 			{
 				if (note.Direction == NoteDirection.Left)
