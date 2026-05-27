@@ -48,9 +48,33 @@ namespace Sekai
 			"se_live_trace",
 			"se_live_trace_critical"
 		};
+
+		private static readonly string[] LiveDefaultPredecodeCueNames =
+		{
+			"se_live_long",
+			"se_live_long_critical",
+			"se_live_perfect",
+			"se_live_great",
+			"se_live_good",
+			"se_live_critical",
+			"se_live_connect",
+			"se_live_connect_critical",
+			"se_live_flick",
+			"se_live_flick_critical",
+			"se_live_trace",
+			"se_live_trace_critical",
+			"se_live_clear",
+			"se_live_full_combo",
+			"se_live_all_perfect",
+			"se_live_end_finish",
+			"se_live_end_clear",
+			"se_live_end_perfect",
+			"se_live_end_all_perfect"
+		};
+
 		private static readonly Dictionary<string, string[]> PredecodeCueNamesByBundleName = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
 		{
-			{ LiveDefaultSoundBundleName, LiveTapPredecodeCueNames },
+			{ LiveDefaultSoundBundleName, LiveDefaultPredecodeCueNames },
 			{ LiveTapSeCustom01BundleName, LiveTapPredecodeCueNames }
 		};
 

@@ -14,13 +14,6 @@ namespace Sekai.Live
 		public void Setup(bool shouldPlayVoiceSE)
 		{
 			_shouldPlayVoiceSE = shouldPlayVoiceSE;
-			if (background != null)
-			{
-				background.gameObject.SetActive(false);
-				Color color = background.color;
-				color.a = 0f;
-				background.color = color;
-			}
 		}
 
 		public void Execute(LiveResultAnimationType liveResultAnimationType)
@@ -69,7 +62,7 @@ namespace Sekai.Live
 			{
 				background.gameObject.SetActive(true);
 				background.DOKill();
-				background.DOColor(new Color(0f, 0f, 0f, 0.5f), 0.2f).SetEase(Ease.OutQuad);
+				background.DOColor(new Color(0f, 0f, 0f, 0.5f), 0.2f).SetEase(Ease.OutCirc);
 			}
 
 			DOVirtual.DelayedCall(0.2f, () =>
@@ -81,7 +74,12 @@ namespace Sekai.Live
 				}
 				if (prefab != null)
 				{
-					Instantiate(prefab, transform);
+					GameObject instance = Instantiate(prefab, transform);
+					Renderer[] renderers = instance.GetComponentsInChildren<Renderer>(true);
+					for (int i = 0; i < renderers.Length; i++)
+					{
+						renderers[i].sortingOrder += 220;
+					}
 				}
 			});
 		}

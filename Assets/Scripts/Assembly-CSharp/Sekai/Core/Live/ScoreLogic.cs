@@ -70,7 +70,6 @@ namespace Sekai.Core.Live
 					break;
 				case NoteResult.Auto:
 					score.autoCount++;
-					score.perfectCount++;
 					break;
 				case NoteResult.Bad:
 					score.badCount++;
