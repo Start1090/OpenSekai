@@ -72,7 +72,7 @@ namespace Sekai
 			float y = t * 2f;
 			currentMoveRoot.localPosition = Vector3.up * y;
 			float alphaT = Mathf.Clamp01(y - 1f);
-			currentArrow.color = Color.Lerp(ColorUtility.WHITE_ALPHA_0, ColorUtility.WHITE_ALPHA_1, alphaT);
+			currentArrow.color = Color.Lerp(ColorUtility.WHITE_ALPHA_1, ColorUtility.WHITE_ALPHA_0, alphaT);
 		}
 
 		public FlickNoteView()

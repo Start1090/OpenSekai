@@ -105,7 +105,7 @@ namespace Sekai.MusicScoreMaker.Ingame.Views
 			_existingTicksSetCache.Clear();
 			foreach (KeyValuePair<long, List<MusicScoreEventData>> pair in groupedEvents)
 			{
-				if (pair.Value != null && pair.Value.Count > 0)
+				if (HasVisibleBalloonEvent(pair.Value))
 				{
 					_existingTicksSetCache.Add(pair.Key);
 				}
@@ -129,7 +129,7 @@ namespace Sekai.MusicScoreMaker.Ingame.Views
 			}
 			foreach (KeyValuePair<long, List<MusicScoreEventData>> pair in groupedEvents)
 			{
-				if (pair.Value == null || pair.Value.Count == 0)
+				if (!HasVisibleBalloonEvent(pair.Value))
 				{
 					continue;
 				}
@@ -144,6 +144,26 @@ namespace Sekai.MusicScoreMaker.Ingame.Views
 				UpdateBalloonForTicks(pair.Key, pair.Value, startTicks, endTicks, parentSize, MusicScoreMakerData);
 			}
 			UpdateFocusTicksBalloon(focusTicks, focusBpm, focusTimeSignatureText, startTicks, endTicks, parentSize);
+		}
+
+		private static bool HasVisibleBalloonEvent(List<MusicScoreEventData> events)
+		{
+			if (events == null)
+			{
+				return false;
+			}
+			foreach (MusicScoreEventData eventData in events)
+			{
+				if (eventData == null)
+				{
+					continue;
+				}
+				if (eventData.eventType == MusicScoreEventType.BPM || eventData.eventType == MusicScoreEventType.TimeSignature)
+				{
+					return true;
+				}
+			}
+			return false;
 		}
 
 		private void UpdateFocusTicksBalloon(long focusTicks, float focusBpm, string focusTimeSignatureText, long startTicks, long endTicks, Vector2 parentSize)

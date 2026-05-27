@@ -4581,6 +4581,29 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 				NotifyMusicScoreAndTimelineChanged();
 			};
 			PushUndoableAction(undo, redo, beforeFocusTicks, beforeFocusTicks);
+			UpdateLastNoteWidthFromExpandOperation(operation, noteDataDict);
+		}
+
+		private void UpdateLastNoteWidthFromExpandOperation(SelectedTargetOperation operation, Dictionary<int, (NoteOperation before, NoteOperation after)> noteDataDict)
+		{
+			if (_model == null || operation == null || noteDataDict == null || noteDataDict.Count == 0)
+			{
+				return;
+			}
+			if (operation.noteTapPosition != SelectedTargetOperation.NoteTapPosition.left
+				&& operation.noteTapPosition != SelectedTargetOperation.NoteTapPosition.right)
+			{
+				return;
+			}
+			foreach ((NoteOperation before, NoteOperation after) in noteDataDict.Values)
+			{
+				int width = after.EndLane - after.StartLane;
+				if (width > 0)
+				{
+					_model.LastNoteWidth = width;
+					break;
+				}
+			}
 		}
 
 		private Dictionary<int, (NoteOperation, NoteOperation)> CalcBeforeAfterNotesData(SelectedTargetOperation selectedTargetOperation)
