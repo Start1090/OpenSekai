@@ -97,7 +97,6 @@ namespace Sekai.Live
 
 		protected override void OnUnSpawnNote()
 		{
-			onUnspawn?.Invoke(this);
 		}
 	}
 }

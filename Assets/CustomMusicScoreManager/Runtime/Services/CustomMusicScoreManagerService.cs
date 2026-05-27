@@ -271,7 +271,9 @@ namespace Sekai.CustomMusicScoreManager
 				{
 					string susText = File.ReadAllText(readSourcePath);
 					Converter converter = new Converter();
-					MusicScoreMakerData data = new MusicScoreMakerData(converter.Convert(susText, true, false));
+					// Original editor import calls SUS.Converter.Convert with isNeedCombo=false.
+					// LongHoldCombo notes are generated later when MusicScoreMakerData is converted for live play.
+					MusicScoreMakerData data = new MusicScoreMakerData(converter.Convert(susText, false, false));
 					data.MusicId = package.MusicId;
 					data.InitializeIdCount();
 					File.WriteAllText(destinationPath, DeepCopyHelper.ToJsonString(data));

@@ -74,9 +74,10 @@ namespace Sekai.Live
 			return base.Judgment(ref touch, lane);
 		}
 
-		protected override void OnSpawnNote()
-		{
-		}
+	protected override void OnSpawnNote()
+	{
+		onSpawn?.Invoke(this);
+	}
 
 		protected override void OnUnSpawnNote()
 		{
