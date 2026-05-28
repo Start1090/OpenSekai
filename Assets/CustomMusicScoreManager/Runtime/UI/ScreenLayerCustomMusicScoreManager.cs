@@ -24,13 +24,27 @@ namespace Sekai.CustomMusicScoreManager
 
 		private const string DynamicFontDbPath = "font/FOT-RodinNTLGPro-DB SDF_Dynamic";
 
-		private const int ManifestFieldColumnCount = 4;
+		private const int MaxManifestFieldColumnCount = 3;
 
-		private const float ManifestFieldMinWidth = 210f;
+		private const float ManifestFieldMinWidth = 300f;
 
-		private const float ActionButtonWidth = 176f;
+		private const float ManifestFieldSpacingX = 22f;
 
-		private const float ActionButtonHeight = 44f;
+		private const float ManifestFieldLeftPadding = 20f;
+
+		private const float ManifestFieldRightScrollPadding = 44f;
+
+		private const float ActionButtonWidth = 196f;
+
+		private const float ActionButtonHeight = 54f;
+
+		private const float ActionButtonSpacing = 12f;
+
+		private const float ActionButtonsTop = 256f;
+
+		private const float ActionButtonsToFormGap = 22f;
+
+		private const float ManifestFormBottom = 112f;
 
 		private static readonly string[] DifficultyTypes =
 		{
@@ -50,8 +64,12 @@ namespace Sekai.CustomMusicScoreManager
 
 		private readonly List<RowView> _rows = new List<RowView>();
 		private RectTransform _listContent;
+		private RectTransform _actionButtonsContent;
+		private ScrollRect _manifestFormScroll;
+		private RectTransform _manifestFormScrollRect;
 		private RectTransform _manifestFieldGrid;
 		private GridLayoutGroup _manifestFieldLayout;
+		private HorizontalLayoutGroup _actionButtonsLayout;
 		private TextMeshProUGUI _emptyText;
 		private TextMeshProUGUI _statusText;
 		private TextMeshProUGUI _detailTitle;
@@ -113,6 +131,7 @@ namespace Sekai.CustomMusicScoreManager
 
 		private void LateUpdate()
 		{
+			UpdateActionButtonLayout();
 			UpdateManifestFieldLayout();
 		}
 
@@ -131,58 +150,66 @@ namespace Sekai.CustomMusicScoreManager
 			background.color = new Color32(21, 25, 31, 255);
 
 			RectTransform topBar = CreatePanel("TopBar", root, new Color32(31, 37, 45, 255));
-			SetStretchTop(topBar, 0f, 0f, 0f, 92f);
+			SetStretchTop(topBar, 0f, 0f, 0f, 108f);
 
-			TextMeshProUGUI title = CreateText("Title", topBar, "Open Sekai 0.5.0", 34, FontStyles.Bold, TextAlignmentOptions.Left);
-			SetAnchor(title.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(32f, 0f), new Vector2(520f, 0f));
+			TextMeshProUGUI title = CreateText("Title", topBar, "Open Sekai 0.5.0", 40, FontStyles.Bold, TextAlignmentOptions.Left);
+			SetAnchor(title.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(36f, 0f), new Vector2(560f, 0f));
 
 			RectTransform toolbar = CreateRect("Toolbar", topBar);
-			SetAnchor(toolbar, new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(1f, 0.5f), new Vector2(-32f, 0f), new Vector2(900f, 0f));
+			SetAnchor(toolbar, new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(1f, 0.5f), new Vector2(-36f, 0f), new Vector2(980f, 0f));
 			HorizontalLayoutGroup toolbarLayout = toolbar.gameObject.AddComponent<HorizontalLayoutGroup>();
 			toolbarLayout.childAlignment = TextAnchor.MiddleRight;
 			toolbarLayout.childControlWidth = false;
 			toolbarLayout.childControlHeight = false;
-			toolbarLayout.spacing = 12f;
-			CreateButton("SettingsButton", toolbar, "Settings", OpenSettings, 128f, 48f);
-			CreateButton("RefreshButton", toolbar, "Refresh", RefreshList, 128f, 48f);
-			CreateButton("NewButton", toolbar, "New", CreatePackage, 112f, 48f);
-			CreateButton("ImportButton", toolbar, "Import", ImportPackage, 128f, 48f);
+			toolbarLayout.spacing = 14f;
+			CreateButton("SettingsButton", toolbar, "Settings", OpenSettings, 150f, 56f);
+			CreateButton("RefreshButton", toolbar, "Refresh", RefreshList, 150f, 56f);
+			CreateButton("NewButton", toolbar, "New", CreatePackage, 132f, 56f);
+			CreateButton("ImportButton", toolbar, "Import", ImportPackage, 150f, 56f);
 
 			RectTransform body = CreateRect("Body", root);
-			SetStretchOffsets(body, 24f, 24f, 24f, 116f);
+			SetStretchOffsets(body, 28f, 28f, 28f, 136f);
 
 			RectTransform listPanel = CreatePanel("ListPanel", body, new Color32(26, 31, 38, 255));
-			SetAnchor(listPanel, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(24f, 0f), new Vector2(520f, 0f));
+			SetAnchor(listPanel, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(28f, 0f), new Vector2(620f, 0f));
 
 			RectTransform listHeader = CreateRect("ListHeader", listPanel);
-			SetStretchTop(listHeader, 16f, 18f, 16f, 42f);
-			TextMeshProUGUI listTitle = CreateText("ListTitle", listHeader, "Local Packages", 22, FontStyles.Bold, TextAlignmentOptions.Left);
+			SetStretchTop(listHeader, 18f, 20f, 18f, 50f);
+			TextMeshProUGUI listTitle = CreateText("ListTitle", listHeader, "Local Packages", 26, FontStyles.Bold, TextAlignmentOptions.Left);
 			Stretch(listTitle.rectTransform);
 
 			ScrollRect scrollRect = CreateScrollRect("PackageScroll", listPanel, out _listContent);
-			SetStretchOffsets(scrollRect.GetComponent<RectTransform>(), 14f, 14f, 14f, 76f);
+			SetStretchOffsets(scrollRect.GetComponent<RectTransform>(), 16f, 16f, 16f, 88f);
 
-			_emptyText = CreateText("EmptyText", listPanel, "No local package", 22, FontStyles.Normal, TextAlignmentOptions.Center);
-			SetStretchOffsets(_emptyText.rectTransform, 24f, 90f, 24f, 90f);
+			_emptyText = CreateText("EmptyText", listPanel, "No local package", 24, FontStyles.Normal, TextAlignmentOptions.Center);
+			SetStretchOffsets(_emptyText.rectTransform, 28f, 100f, 28f, 100f);
 
 			RectTransform detailPanel = CreatePanel("DetailPanel", body, new Color32(28, 34, 42, 255));
-			SetStretchOffsets(detailPanel, 568f, 0f, 0f, 0f);
+			SetStretchOffsets(detailPanel, 688f, 0f, 0f, 0f);
 
 			_jacketImage = CreateImage("Jacket", detailPanel, new Color32(42, 49, 58, 255));
-			SetAnchor(_jacketImage.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(24f, -24f), new Vector2(160f, 160f));
+			SetAnchor(_jacketImage.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(28f, -28f), new Vector2(200f, 200f));
 			_jacketImage.preserveAspect = true;
 
-			_detailTitle = CreateText("DetailTitle", detailPanel, "Select a package", 32, FontStyles.Bold, TextAlignmentOptions.Left);
-			SetStretchTop(_detailTitle.rectTransform, 208f, 28f, 28f, 44f);
+			_detailTitle = CreateText("DetailTitle", detailPanel, "Select a package", 38, FontStyles.Bold, TextAlignmentOptions.Left);
+			SetStretchTop(_detailTitle.rectTransform, 252f, 30f, 30f, 54f);
 
-			_detailMeta = CreateText("DetailMeta", detailPanel, string.Empty, 20, FontStyles.Normal, TextAlignmentOptions.Left);
-			SetStretchTop(_detailMeta.rectTransform, 208f, 78f, 28f, 76f);
+			_detailMeta = CreateText("DetailMeta", detailPanel, string.Empty, 22, FontStyles.Normal, TextAlignmentOptions.Left);
+			SetStretchTop(_detailMeta.rectTransform, 252f, 88f, 30f, 88f);
 
-			_detailStatus = CreateText("DetailStatus", detailPanel, string.Empty, 20, FontStyles.Bold, TextAlignmentOptions.Left);
-			SetStretchTop(_detailStatus.rectTransform, 208f, 158f, 28f, 32f);
+			_detailStatus = CreateText("DetailStatus", detailPanel, string.Empty, 22, FontStyles.Bold, TextAlignmentOptions.Left);
+			SetStretchTop(_detailStatus.rectTransform, 252f, 184f, 30f, 38f);
 
-			ScrollRect actionScroll = CreateHorizontalScrollRect("ActionButtons", detailPanel, out RectTransform actionButtons);
-			SetStretchTop(actionScroll.GetComponent<RectTransform>(), 24f, 214f, 24f, 56f);
+			RectTransform actionButtons = CreateRect("ActionButtons", detailPanel);
+			SetStretchTop(actionButtons, 28f, ActionButtonsTop, 28f, ActionButtonHeight);
+			_actionButtonsContent = actionButtons;
+			_actionButtonsLayout = actionButtons.gameObject.AddComponent<HorizontalLayoutGroup>();
+			_actionButtonsLayout.spacing = ActionButtonSpacing;
+			_actionButtonsLayout.childAlignment = TextAnchor.MiddleLeft;
+			_actionButtonsLayout.childControlWidth = true;
+			_actionButtonsLayout.childControlHeight = true;
+			_actionButtonsLayout.childForceExpandWidth = true;
+			_actionButtonsLayout.childForceExpandHeight = false;
 			_editButton = CreateButton("EditButton", actionButtons, "Edit", OpenEditor, ActionButtonWidth, ActionButtonHeight);
 			_playButton = CreateButton("PlayButton", actionButtons, "Play", PlaySelected, ActionButtonWidth, ActionButtonHeight);
 			_autoButton = CreateButton("AutoButton", actionButtons, "Auto", AutoPlaySelected, ActionButtonWidth, ActionButtonHeight);
@@ -191,10 +218,12 @@ namespace Sekai.CustomMusicScoreManager
 			_deleteButton = CreateButton("DeleteButton", actionButtons, "Delete", DeleteSelected, ActionButtonWidth, ActionButtonHeight, new Color32(110, 49, 57, 255));
 
 			ScrollRect formScroll = CreateMaskedScrollRect("ManifestFormScroll", detailPanel, out RectTransform form);
-			SetStretchOffsets(formScroll.GetComponent<RectTransform>(), 24f, 78f, 24f, 290f);
+			_manifestFormScroll = formScroll;
+			_manifestFormScrollRect = formScroll.GetComponent<RectTransform>();
+			SetStretchOffsets(_manifestFormScrollRect, 28f, ManifestFormBottom, 28f, ActionButtonsTop + ActionButtonHeight + ActionButtonsToFormGap);
 			VerticalLayoutGroup formLayout = form.gameObject.AddComponent<VerticalLayoutGroup>();
-			formLayout.spacing = 12f;
-			formLayout.padding = new RectOffset(16, 16, 16, 16);
+			formLayout.spacing = 14f;
+			formLayout.padding = new RectOffset(Mathf.RoundToInt(ManifestFieldLeftPadding), Mathf.RoundToInt(ManifestFieldRightScrollPadding), 20, 20);
 			formLayout.childControlWidth = true;
 			formLayout.childControlHeight = false;
 			ContentSizeFitter formFitter = form.gameObject.AddComponent<ContentSizeFitter>();
@@ -202,43 +231,44 @@ namespace Sekai.CustomMusicScoreManager
 
 			_manifestFieldGrid = CreateRect("FieldGrid", form);
 			_manifestFieldLayout = _manifestFieldGrid.gameObject.AddComponent<GridLayoutGroup>();
-			_manifestFieldLayout.cellSize = new Vector2(ManifestFieldMinWidth, 70f);
-			_manifestFieldLayout.spacing = new Vector2(14f, 10f);
+			_manifestFieldLayout.cellSize = new Vector2(ManifestFieldMinWidth, 116f);
+			_manifestFieldLayout.spacing = new Vector2(ManifestFieldSpacingX, 20f);
 			_manifestFieldLayout.startAxis = GridLayoutGroup.Axis.Horizontal;
 			_manifestFieldLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-			_manifestFieldLayout.constraintCount = ManifestFieldColumnCount;
+			_manifestFieldLayout.constraintCount = MaxManifestFieldColumnCount;
 			ContentSizeFitter fieldFitter = _manifestFieldGrid.gameObject.AddComponent<ContentSizeFitter>();
 			fieldFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
 			_titleInput = CreateInputField(_manifestFieldGrid, "Title", "title");
 			_scoreTitleInput = CreateInputField(_manifestFieldGrid, "Score Title", "scoreTitle");
 			_userInput = CreateInputField(_manifestFieldGrid, "Author", "userName");
+			_audioInput = CreateInputField(_manifestFieldGrid, "Audio", "audioFileName", ReplaceSelectedAudio, out _audioSelectButton);
+			_jacketInput = CreateInputField(_manifestFieldGrid, "Jacket", "jacketFileName", ReplaceSelectedJacket, out _jacketSelectButton);
+			_scoreInput = CreateInputField(_manifestFieldGrid, "Score", "scoreFileName", ReplaceSelectedScore, out _scoreSelectButton);
+			_fillerInput = CreateInputField(_manifestFieldGrid, "Filler Sec", "fillerSec");
+			_durationInput = CreateInputField(_manifestFieldGrid, "Duration", "secForMusicScoreMaker");
+			_difficultyButton = CreateDifficultySelector(_manifestFieldGrid);
+			_levelInput = CreateInputField(_manifestFieldGrid, "Level", "playLevel");
 			_composerInput = CreateInputField(_manifestFieldGrid, "Composer", "composer");
 			_lyricistInput = CreateInputField(_manifestFieldGrid, "Lyricist", "lyricist");
 			_arrangerInput = CreateInputField(_manifestFieldGrid, "Arranger", "arranger");
 			_singerInput = CreateInputField(_manifestFieldGrid, "Singer", "singer");
 			_descriptionInput = CreateInputField(_manifestFieldGrid, "Description", "description");
-			_difficultyButton = CreateDifficultySelector(_manifestFieldGrid);
-			_levelInput = CreateInputField(_manifestFieldGrid, "Level", "playLevel");
-			_durationInput = CreateInputField(_manifestFieldGrid, "Duration", "secForMusicScoreMaker");
-			_fillerInput = CreateInputField(_manifestFieldGrid, "Filler Sec", "fillerSec");
-			_audioInput = CreateInputField(_manifestFieldGrid, "Audio", "audioFileName", ReplaceSelectedAudio, out _audioSelectButton);
-			_jacketInput = CreateInputField(_manifestFieldGrid, "Jacket (740x740)", "jacketFileName", ReplaceSelectedJacket, out _jacketSelectButton);
-			_scoreInput = CreateInputField(_manifestFieldGrid, "Score", "scoreFileName", ReplaceSelectedScore, out _scoreSelectButton);
-			RectTransform saveRow = CreateRect("SaveManifestRow", form);
-			LayoutElement saveRowLayout = saveRow.gameObject.AddComponent<LayoutElement>();
-			saveRowLayout.preferredHeight = 44f;
-			saveRowLayout.minHeight = 44f;
+			RectTransform saveRow = CreateRect("SaveManifestRow", detailPanel);
+			SetStretchBottom(saveRow, 28f, 28f, 28f, 64f);
 			HorizontalLayoutGroup saveRowGroup = saveRow.gameObject.AddComponent<HorizontalLayoutGroup>();
-			saveRowGroup.childControlWidth = false;
-			saveRowGroup.childControlHeight = false;
+			saveRowGroup.childControlWidth = true;
+			saveRowGroup.childControlHeight = true;
+			saveRowGroup.childForceExpandWidth = false;
+			saveRowGroup.childForceExpandHeight = false;
 			saveRowGroup.childAlignment = TextAnchor.MiddleLeft;
-			_saveManifestButton = CreateButton("SaveManifestButton", saveRow, "Save Manifest", SaveSelectedManifest, 176f, 44f);
-
-			RectTransform bottom = CreateRect("BottomBar", detailPanel);
-			SetStretchBottom(bottom, 28f, 26f, 28f, 34f);
-			_statusText = CreateText("StatusText", bottom, string.Empty, 18, FontStyles.Normal, TextAlignmentOptions.Left);
-			Stretch(_statusText.rectTransform);
+			_saveManifestButton = CreateButton("SaveManifestButton", saveRow, "Save Manifest", SaveSelectedManifest, 230f, 58f);
+			_statusText = CreateText("StatusText", saveRow, string.Empty, 21, FontStyles.Normal, TextAlignmentOptions.Right);
+			_statusText.raycastTarget = false;
+			LayoutElement statusLayout = _statusText.gameObject.AddComponent<LayoutElement>();
+			statusLayout.flexibleWidth = 1f;
+			statusLayout.minHeight = 58f;
+			statusLayout.preferredHeight = 58f;
 
 			BuildSettingsOverlay(root);
 			UpdateSelection(null);
@@ -251,19 +281,19 @@ namespace Sekai.CustomMusicScoreManager
 			_settingsOverlay.gameObject.SetActive(false);
 
 			RectTransform dialog = CreatePanel("SettingsDialog", _settingsOverlay, new Color32(31, 37, 45, 255));
-			SetAnchor(dialog, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(640f, 560f));
+			SetAnchor(dialog, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(760f, 660f));
 
 			VerticalLayoutGroup dialogLayout = dialog.gameObject.AddComponent<VerticalLayoutGroup>();
-			dialogLayout.padding = new RectOffset(24, 24, 24, 24);
-			dialogLayout.spacing = 12f;
+			dialogLayout.padding = new RectOffset(32, 32, 32, 32);
+			dialogLayout.spacing = 16f;
 			dialogLayout.childControlWidth = true;
 			dialogLayout.childControlHeight = false;
 			dialogLayout.childForceExpandWidth = true;
 			dialogLayout.childForceExpandHeight = false;
 
-			TextMeshProUGUI title = CreateText("Title", dialog, "Settings", 30, FontStyles.Bold, TextAlignmentOptions.Left);
+			TextMeshProUGUI title = CreateText("Title", dialog, "Settings", 36, FontStyles.Bold, TextAlignmentOptions.Left);
 			LayoutElement titleLayout = title.gameObject.AddComponent<LayoutElement>();
-			titleLayout.preferredHeight = 38f;
+			titleLayout.preferredHeight = 46f;
 
 			_settingLiveBgmInput = CreateInputField(dialog, "LiveVolume.Bgm", "0.0 - 1.0");
 			_settingLiveSeInput = CreateInputField(dialog, "LiveVolume.Se", "0.0 - 1.0");
@@ -272,18 +302,18 @@ namespace Sekai.CustomMusicScoreManager
 
 			RectTransform buttonRow = CreateRect("ButtonRow", dialog);
 			LayoutElement buttonRowLayout = buttonRow.gameObject.AddComponent<LayoutElement>();
-			buttonRowLayout.preferredHeight = 48f;
-			buttonRowLayout.minHeight = 48f;
+			buttonRowLayout.preferredHeight = 58f;
+			buttonRowLayout.minHeight = 58f;
 			HorizontalLayoutGroup buttonRowGroup = buttonRow.gameObject.AddComponent<HorizontalLayoutGroup>();
-			buttonRowGroup.spacing = 12f;
+			buttonRowGroup.spacing = 14f;
 			buttonRowGroup.childAlignment = TextAnchor.MiddleRight;
 			buttonRowGroup.childControlWidth = false;
 			buttonRowGroup.childControlHeight = false;
 			buttonRowGroup.childForceExpandWidth = false;
 			buttonRowGroup.childForceExpandHeight = false;
 
-			CreateButton("CancelButton", buttonRow, "Cancel", CloseSettings, 128f, 44f);
-			CreateButton("SaveButton", buttonRow, "Save", SaveSettings, 128f, 44f);
+			CreateButton("CancelButton", buttonRow, "Cancel", CloseSettings, 150f, 52f);
+			CreateButton("SaveButton", buttonRow, "Save", SaveSettings, 150f, 52f);
 		}
 
 		private void OpenSettings()
@@ -356,23 +386,117 @@ namespace Sekai.CustomMusicScoreManager
 				return;
 			}
 
-			float availableWidth = _manifestFieldGrid.rect.width;
+			float availableWidth = GetManifestFieldAvailableWidth();
 			if (availableWidth <= 0f)
 			{
 				return;
 			}
 
-			float spacingWidth = _manifestFieldLayout.spacing.x * (ManifestFieldColumnCount - 1);
-			float cellWidth = Mathf.Floor((availableWidth - spacingWidth) / ManifestFieldColumnCount);
-			cellWidth = Mathf.Max(ManifestFieldMinWidth, cellWidth);
+			int columnCount = CalculateManifestColumnCount(availableWidth);
+			float spacingWidth = _manifestFieldLayout.spacing.x * (columnCount - 1);
+			float cellWidth = Mathf.Floor((availableWidth - spacingWidth) / columnCount);
+			cellWidth = Mathf.Max(1f, cellWidth);
 			Vector2 cellSize = _manifestFieldLayout.cellSize;
-			if (Mathf.Abs(cellSize.x - cellWidth) <= 0.5f)
+			bool gridWidthChanged = Mathf.Abs(_manifestFieldGrid.rect.width - availableWidth) > 0.5f;
+			if (_manifestFieldLayout.constraintCount == columnCount && Mathf.Abs(cellSize.x - cellWidth) <= 0.5f && !gridWidthChanged)
 			{
 				return;
 			}
 
+			_manifestFieldGrid.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, availableWidth);
+			_manifestFieldLayout.constraintCount = columnCount;
 			_manifestFieldLayout.cellSize = new Vector2(cellWidth, cellSize.y);
 			LayoutRebuilder.MarkLayoutForRebuild(_manifestFieldGrid);
+			if (_manifestFieldGrid.parent is RectTransform parent)
+			{
+				LayoutRebuilder.MarkLayoutForRebuild(parent);
+			}
+		}
+
+		private float GetManifestFieldAvailableWidth()
+		{
+			if (_manifestFormScroll != null && _manifestFormScroll.viewport != null)
+			{
+				return _manifestFormScroll.viewport.rect.width - ManifestFieldLeftPadding - ManifestFieldRightScrollPadding;
+			}
+
+			return _manifestFieldGrid.rect.width;
+		}
+
+		private void UpdateActionButtonLayout()
+		{
+			if (_actionButtonsContent == null || _actionButtonsLayout == null)
+			{
+				return;
+			}
+
+			float availableWidth = _actionButtonsContent.rect.width;
+			if (availableWidth <= 0f)
+			{
+				return;
+			}
+
+			int childCount = _actionButtonsContent.childCount;
+			if (childCount <= 0)
+			{
+				return;
+			}
+
+			float totalSpacing = ActionButtonSpacing * Mathf.Max(0, childCount - 1);
+			float buttonWidth = Mathf.Max(1f, Mathf.Floor((availableWidth - totalSpacing) / childCount));
+			bool layoutChanged = false;
+			for (int i = 0; i < childCount; i++)
+			{
+				LayoutElement layoutElement = _actionButtonsContent.GetChild(i).GetComponent<LayoutElement>();
+				if (layoutElement == null)
+				{
+					continue;
+				}
+
+				if (Mathf.Abs(layoutElement.minWidth - 1f) > 0.5f
+					|| Mathf.Abs(layoutElement.preferredWidth - buttonWidth) > 0.5f
+					|| Mathf.Abs(layoutElement.flexibleWidth - 1f) > 0.5f
+					|| Mathf.Abs(layoutElement.minHeight - ActionButtonHeight) > 0.5f
+					|| Mathf.Abs(layoutElement.preferredHeight - ActionButtonHeight) > 0.5f)
+				{
+					layoutElement.minWidth = 1f;
+					layoutElement.preferredWidth = buttonWidth;
+					layoutElement.flexibleWidth = 1f;
+					layoutElement.preferredHeight = ActionButtonHeight;
+					layoutElement.minHeight = ActionButtonHeight;
+					layoutChanged = true;
+				}
+			}
+
+			float actionHeight = ActionButtonHeight;
+			float formTop = ActionButtonsTop + actionHeight + ActionButtonsToFormGap;
+			bool actionHeightChanged = Mathf.Abs(_actionButtonsContent.rect.height - actionHeight) > 0.5f;
+			bool formTopChanged = _manifestFormScrollRect != null && Mathf.Abs(_manifestFormScrollRect.offsetMax.y + formTop) > 0.5f;
+			if (!layoutChanged && !actionHeightChanged && !formTopChanged)
+			{
+				return;
+			}
+
+			SetStretchTop(_actionButtonsContent, 28f, ActionButtonsTop, 28f, actionHeight);
+			if (_manifestFormScrollRect != null)
+			{
+				SetStretchOffsets(_manifestFormScrollRect, 28f, ManifestFormBottom, 28f, formTop);
+			}
+			LayoutRebuilder.MarkLayoutForRebuild(_actionButtonsContent);
+		}
+
+		private static int CalculateManifestColumnCount(float availableWidth)
+		{
+			for (int columns = MaxManifestFieldColumnCount; columns > 1; columns--)
+			{
+				float requiredWidth = ManifestFieldMinWidth * columns + ManifestFieldSpacingX * (columns - 1);
+				if (availableWidth >= requiredWidth)
+				{
+					return columns;
+				}
+			}
+
+			return 1;
 		}
 
 		private void RefreshList()
@@ -416,10 +540,10 @@ namespace Sekai.CustomMusicScoreManager
 			GameObject root = new GameObject("PackageCell", typeof(RectTransform), typeof(Image), typeof(Button), typeof(LayoutElement));
 			root.transform.SetParent(parent, false);
 			RectTransform rect = root.GetComponent<RectTransform>();
-			rect.sizeDelta = new Vector2(0f, 92f);
+			rect.sizeDelta = new Vector2(0f, 116f);
 			LayoutElement layout = root.GetComponent<LayoutElement>();
-			layout.preferredHeight = 92f;
-			layout.minHeight = 92f;
+			layout.preferredHeight = 116f;
+			layout.minHeight = 116f;
 
 			Image image = root.GetComponent<Image>();
 			image.color = new Color32(39, 46, 55, 255);
@@ -427,8 +551,8 @@ namespace Sekai.CustomMusicScoreManager
 			button.targetGraphic = image;
 			button.onClick.AddListener(() => UpdateSelection(item));
 
-			TextMeshProUGUI title = CreateText("Title", rect, item.Package.Manifest.scoreTitle, 22, FontStyles.Bold, TextAlignmentOptions.Left);
-			SetAnchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 1f), new Vector2(18f, -12f), new Vector2(-36f, 30f));
+			TextMeshProUGUI title = CreateText("Title", rect, item.Package.Manifest.scoreTitle, 26, FontStyles.Bold, TextAlignmentOptions.Left);
+			SetAnchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 1f), new Vector2(22f, -14f), new Vector2(-44f, 36f));
 
 			string metaText = item.Package.Manifest.title;
 			if (!string.IsNullOrEmpty(item.Package.Manifest.userName))
@@ -439,11 +563,11 @@ namespace Sekai.CustomMusicScoreManager
 			{
 				metaText += "  " + item.Package.Manifest.musicDifficultyType.ToUpperInvariant();
 			}
-			TextMeshProUGUI meta = CreateText("Meta", rect, metaText, 17, FontStyles.Normal, TextAlignmentOptions.Left);
-			SetAnchor(meta.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0f, 0f), new Vector2(18f, 12f), new Vector2(-180f, 26f));
+			TextMeshProUGUI meta = CreateText("Meta", rect, metaText, 20, FontStyles.Normal, TextAlignmentOptions.Left);
+			SetAnchor(meta.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0f, 0f), new Vector2(22f, 16f), new Vector2(-210f, 30f));
 
-			TextMeshProUGUI status = CreateText("Status", rect, item.StatusText, 17, FontStyles.Bold, TextAlignmentOptions.Right);
-			SetAnchor(status.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-18f, 12f), new Vector2(150f, 26f));
+			TextMeshProUGUI status = CreateText("Status", rect, item.StatusText, 20, FontStyles.Bold, TextAlignmentOptions.Right);
+			SetAnchor(status.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-22f, 16f), new Vector2(178f, 30f));
 			status.color = item.HasAudio && item.HasScore ? new Color32(126, 221, 166, 255) : new Color32(255, 184, 100, 255);
 
 			return new RowView(root, image, item);
@@ -1215,21 +1339,21 @@ namespace Sekai.CustomMusicScoreManager
 			GameObject root = new GameObject("DifficultyInput", typeof(RectTransform));
 			root.transform.SetParent(parent, false);
 			LayoutElement layoutElement = root.AddComponent<LayoutElement>();
-			layoutElement.preferredHeight = 72f;
-			layoutElement.minHeight = 72f;
+			layoutElement.preferredHeight = 116f;
+			layoutElement.minHeight = 116f;
 
 			VerticalLayoutGroup vertical = root.AddComponent<VerticalLayoutGroup>();
-			vertical.spacing = 6f;
+			vertical.spacing = 12f;
 			vertical.childControlWidth = true;
 			vertical.childControlHeight = false;
 
-			TextMeshProUGUI labelText = CreateText("Label", root.transform, "Difficulty", 16, FontStyles.Bold, TextAlignmentOptions.Left);
-			labelText.rectTransform.sizeDelta = new Vector2(0f, 20f);
+			TextMeshProUGUI labelText = CreateText("Label", root.transform, "Difficulty", 23, FontStyles.Bold, TextAlignmentOptions.Left);
+			labelText.rectTransform.sizeDelta = new Vector2(0f, 30f);
 
 			GameObject fieldObject = new GameObject("Field", typeof(RectTransform), typeof(Image), typeof(Button));
 			fieldObject.transform.SetParent(root.transform, false);
 			_difficultyFieldRect = fieldObject.GetComponent<RectTransform>();
-			_difficultyFieldRect.sizeDelta = new Vector2(0f, 42f);
+			_difficultyFieldRect.sizeDelta = new Vector2(0f, 70f);
 			Image fieldImage = fieldObject.GetComponent<Image>();
 			fieldImage.color = new Color32(22, 26, 32, 255);
 
@@ -1244,13 +1368,13 @@ namespace Sekai.CustomMusicScoreManager
 			button.colors = colors;
 			button.onClick.AddListener(CycleDifficulty);
 
-			_difficultyLabel = CreateText("Label", _difficultyFieldRect, string.Empty, 18, FontStyles.Normal, TextAlignmentOptions.Left);
+			_difficultyLabel = CreateText("Label", _difficultyFieldRect, string.Empty, 26, FontStyles.Normal, TextAlignmentOptions.Left);
 			_difficultyLabel.raycastTarget = false;
-			SetStretchOffsets(_difficultyLabel.rectTransform, 12f, 0f, 88f, 0f);
+			SetStretchOffsets(_difficultyLabel.rectTransform, 18f, 0f, 124f, 0f);
 
-			TextMeshProUGUI hint = CreateText("Hint", _difficultyFieldRect, "Cycle", 13, FontStyles.Bold, TextAlignmentOptions.Center);
+			TextMeshProUGUI hint = CreateText("Hint", _difficultyFieldRect, "Cycle", 19, FontStyles.Bold, TextAlignmentOptions.Center);
 			hint.raycastTarget = false;
-			SetAnchor(hint.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(1f, 0.5f), new Vector2(-8f, 0f), new Vector2(70f, 0f));
+			SetAnchor(hint.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(1f, 0.5f), new Vector2(-14f, 0f), new Vector2(104f, 0f));
 			SetDifficultyDropdownValue("master");
 			return button;
 		}
@@ -1272,31 +1396,31 @@ namespace Sekai.CustomMusicScoreManager
 			GameObject root = new GameObject(label + "Input", typeof(RectTransform));
 			root.transform.SetParent(parent, false);
 			LayoutElement layoutElement = root.AddComponent<LayoutElement>();
-			layoutElement.preferredHeight = 72f;
-			layoutElement.minHeight = 72f;
+			layoutElement.preferredHeight = 116f;
+			layoutElement.minHeight = 116f;
 			VerticalLayoutGroup vertical = root.AddComponent<VerticalLayoutGroup>();
-			vertical.spacing = 6f;
+			vertical.spacing = 12f;
 			vertical.childControlWidth = true;
 			vertical.childControlHeight = false;
 
-			TextMeshProUGUI labelText = CreateText("Label", root.transform, label, 16, FontStyles.Bold, TextAlignmentOptions.Left);
-			labelText.rectTransform.sizeDelta = new Vector2(0f, 20f);
+			TextMeshProUGUI labelText = CreateText("Label", root.transform, label, 23, FontStyles.Bold, TextAlignmentOptions.Left);
+			labelText.rectTransform.sizeDelta = new Vector2(0f, 30f);
 
 			GameObject fieldObject = new GameObject("Field", typeof(RectTransform), typeof(Image), typeof(TMP_InputField));
 			fieldObject.transform.SetParent(root.transform, false);
 			RectTransform fieldRect = fieldObject.GetComponent<RectTransform>();
-			fieldRect.sizeDelta = new Vector2(0f, 42f);
+			fieldRect.sizeDelta = new Vector2(0f, 70f);
 			fieldObject.GetComponent<Image>().color = new Color32(22, 26, 32, 255);
 
 			RectTransform textArea = CreateRect("Text Area", fieldRect);
 			textArea.gameObject.AddComponent<RectMask2D>();
-			SetStretchOffsets(textArea, 8f, 4f, onClick == null ? 8f : 82f, 4f);
+			SetStretchOffsets(textArea, 14f, 7f, onClick == null ? 14f : 126f, 7f);
 
-			TextMeshProUGUI text = CreateText("Text", textArea, string.Empty, 18, FontStyles.Normal, TextAlignmentOptions.Left);
+			TextMeshProUGUI text = CreateText("Text", textArea, string.Empty, 26, FontStyles.Normal, TextAlignmentOptions.Left);
 			SetStretchOffsets(text.rectTransform, 4f, 0f, 4f, 0f);
 			text.raycastTarget = false;
 
-			TextMeshProUGUI placeholderText = CreateText("Placeholder", textArea, placeholder, 18, FontStyles.Normal, TextAlignmentOptions.Left);
+			TextMeshProUGUI placeholderText = CreateText("Placeholder", textArea, placeholder, 26, FontStyles.Normal, TextAlignmentOptions.Left);
 			SetStretchOffsets(placeholderText.rectTransform, 4f, 0f, 4f, 0f);
 			placeholderText.color = new Color32(136, 146, 158, 180);
 			placeholderText.raycastTarget = false;
@@ -1306,7 +1430,7 @@ namespace Sekai.CustomMusicScoreManager
 				GameObject actionObject = new GameObject("SelectButton", typeof(RectTransform), typeof(Image), typeof(Button));
 				actionObject.transform.SetParent(fieldRect, false);
 				RectTransform actionRect = actionObject.GetComponent<RectTransform>();
-				SetAnchor(actionRect, new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(1f, 0.5f), new Vector2(-4f, 0f), new Vector2(70f, -8f));
+				SetAnchor(actionRect, new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(1f, 0.5f), new Vector2(-7f, 0f), new Vector2(110f, -14f));
 
 				Image actionImage = actionObject.GetComponent<Image>();
 				actionImage.color = new Color32(62, 78, 92, 255);
@@ -1321,7 +1445,7 @@ namespace Sekai.CustomMusicScoreManager
 				actionButton.colors = colors;
 				actionButton.onClick.AddListener(onClick);
 
-				TextMeshProUGUI actionLabel = CreateText("Label", actionRect, "Select", 14, FontStyles.Bold, TextAlignmentOptions.Center);
+				TextMeshProUGUI actionLabel = CreateText("Label", actionRect, "Select", 20, FontStyles.Bold, TextAlignmentOptions.Center);
 				actionLabel.enableWordWrapping = false;
 				actionLabel.overflowMode = TextOverflowModes.Ellipsis;
 				Stretch(actionLabel.rectTransform);
@@ -1340,13 +1464,13 @@ namespace Sekai.CustomMusicScoreManager
 			GameObject root = new GameObject(name + "Cell", typeof(RectTransform), typeof(LayoutElement));
 			root.transform.SetParent(parent, false);
 			LayoutElement layoutElement = root.GetComponent<LayoutElement>();
-			layoutElement.preferredHeight = 72f;
-			layoutElement.minHeight = 72f;
+			layoutElement.preferredHeight = 86f;
+			layoutElement.minHeight = 86f;
 
 			GameObject buttonObject = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
 			buttonObject.transform.SetParent(root.transform, false);
 			RectTransform buttonRect = buttonObject.GetComponent<RectTransform>();
-			SetStretchOffsets(buttonRect, 0f, 8f, 0f, 8f);
+			SetStretchOffsets(buttonRect, 0f, 10f, 0f, 10f);
 
 			Image image = buttonObject.GetComponent<Image>();
 			image.color = new Color32(54, 67, 80, 255);
@@ -1361,7 +1485,7 @@ namespace Sekai.CustomMusicScoreManager
 			button.colors = colors;
 			button.onClick.AddListener(onClick);
 
-			TextMeshProUGUI text = CreateText("Label", buttonRect, label, 18, FontStyles.Bold, TextAlignmentOptions.Center);
+			TextMeshProUGUI text = CreateText("Label", buttonRect, label, 20, FontStyles.Bold, TextAlignmentOptions.Center);
 			text.enableWordWrapping = false;
 			text.overflowMode = TextOverflowModes.Ellipsis;
 			Stretch(text.rectTransform);
@@ -1391,7 +1515,7 @@ namespace Sekai.CustomMusicScoreManager
 			button.colors = colors;
 			button.onClick.AddListener(onClick);
 
-			TextMeshProUGUI text = CreateText("Label", rect, label, 18, FontStyles.Bold, TextAlignmentOptions.Center);
+			TextMeshProUGUI text = CreateText("Label", rect, label, 20, FontStyles.Bold, TextAlignmentOptions.Center);
 			text.enableWordWrapping = false;
 			text.overflowMode = TextOverflowModes.Ellipsis;
 			Stretch(text.rectTransform);
@@ -1419,8 +1543,8 @@ namespace Sekai.CustomMusicScoreManager
 			content.sizeDelta = Vector2.zero;
 
 			HorizontalLayoutGroup layout = content.gameObject.AddComponent<HorizontalLayoutGroup>();
-			layout.spacing = 10f;
-			layout.padding = new RectOffset(0, 0, 6, 6);
+			layout.spacing = 12f;
+			layout.padding = new RectOffset(0, 0, 7, 7);
 			layout.childControlWidth = false;
 			layout.childControlHeight = false;
 			layout.childAlignment = TextAnchor.MiddleLeft;
@@ -1451,8 +1575,8 @@ namespace Sekai.CustomMusicScoreManager
 			content.anchoredPosition = Vector2.zero;
 			content.sizeDelta = Vector2.zero;
 			VerticalLayoutGroup layout = content.gameObject.AddComponent<VerticalLayoutGroup>();
-			layout.spacing = 10f;
-			layout.padding = new RectOffset(8, 8, 8, 8);
+			layout.spacing = 12f;
+			layout.padding = new RectOffset(10, 10, 10, 10);
 			layout.childControlWidth = true;
 			layout.childControlHeight = false;
 			ContentSizeFitter fitter = content.gameObject.AddComponent<ContentSizeFitter>();

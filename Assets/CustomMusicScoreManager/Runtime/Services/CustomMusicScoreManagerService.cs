@@ -8,12 +8,15 @@ using Sekai.MusicScoreMaker.Common;
 using Sekai.MusicScoreMaker.Ingame.Models;
 using Sekai.MusicScoreMaker.Ingame.Utilities;
 using Sekai.SUS;
+using UnityEngine;
 
 namespace Sekai.CustomMusicScoreManager
 {
 	public static class CustomMusicScoreManagerService
 	{
 		private const string ExportDirectoryName = "Exports";
+
+		private const int JacketTextureSize = 740;
 
 		private static readonly HashSet<string> AudioExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
 		{
@@ -196,7 +199,7 @@ namespace Sekai.CustomMusicScoreManager
 				File.Delete(destinationPath);
 			}
 
-			ZipFile.CreateFromDirectory(package.RootDirectory, destinationPath, CompressionLevel.Optimal, false);
+			ZipFile.CreateFromDirectory(package.RootDirectory, destinationPath, System.IO.Compression.CompressionLevel.Optimal, false);
 			return destinationPath;
 		}
 
@@ -232,7 +235,8 @@ namespace Sekai.CustomMusicScoreManager
 				"jacket",
 				JacketExtensions,
 				manifest => manifest.jacketFileName,
-				(manifest, fileName) => manifest.jacketFileName = fileName);
+				(manifest, fileName) => manifest.jacketFileName = fileName,
+				ResizeAndWriteJacketFile);
 		}
 
 		public static CustomMusicScorePackage ReplaceScoreFile(CustomMusicScorePackage package, string sourcePath)
@@ -369,7 +373,8 @@ namespace Sekai.CustomMusicScoreManager
 			string fixedBaseName,
 			HashSet<string> allowedExtensions,
 			Func<CustomMusicScoreManifest, string> getCurrentFileName,
-			Action<CustomMusicScoreManifest, string> setFileName)
+			Action<CustomMusicScoreManifest, string> setFileName,
+			Action<string, string, string> writeFile = null)
 		{
 			if (package == null || string.IsNullOrEmpty(sourcePath) || !File.Exists(sourcePath))
 			{
@@ -398,7 +403,14 @@ namespace Sekai.CustomMusicScoreManager
 			try
 			{
 				DeleteExistingPackageSlotFiles(package.RootDirectory, fixedBaseName, allowedExtensions, getCurrentFileName?.Invoke(manifest));
-				File.Copy(copySourcePath, destinationPath, true);
+				if (writeFile != null)
+				{
+					writeFile(copySourcePath, destinationPath, extension);
+				}
+				else
+				{
+					File.Copy(copySourcePath, destinationPath, true);
+				}
 				setFileName(manifest, Path.GetFileName(destinationPath));
 				manifest.Normalize();
 				WriteManifest(package.RootDirectory, manifest);
@@ -410,6 +422,40 @@ namespace Sekai.CustomMusicScoreManager
 				{
 					File.Delete(tempCopyPath);
 				}
+			}
+		}
+
+		private static void ResizeAndWriteJacketFile(string sourcePath, string destinationPath, string extension)
+		{
+			byte[] sourceBytes = File.ReadAllBytes(sourcePath);
+			Texture2D sourceTexture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+			if (!sourceTexture.LoadImage(sourceBytes))
+			{
+				UnityEngine.Object.Destroy(sourceTexture);
+				throw new InvalidOperationException("Unsupported jacket image data.");
+			}
+
+			RenderTexture previous = RenderTexture.active;
+			RenderTexture renderTexture = RenderTexture.GetTemporary(JacketTextureSize, JacketTextureSize, 0, RenderTextureFormat.ARGB32);
+			Texture2D resizedTexture = new Texture2D(JacketTextureSize, JacketTextureSize, TextureFormat.RGBA32, false);
+			try
+			{
+				Graphics.Blit(sourceTexture, renderTexture);
+				RenderTexture.active = renderTexture;
+				resizedTexture.ReadPixels(new Rect(0f, 0f, JacketTextureSize, JacketTextureSize), 0, 0);
+				resizedTexture.Apply(false, false);
+
+				byte[] resizedBytes = extension.Equals(".png", StringComparison.OrdinalIgnoreCase)
+					? resizedTexture.EncodeToPNG()
+					: resizedTexture.EncodeToJPG(95);
+				File.WriteAllBytes(destinationPath, resizedBytes);
+			}
+			finally
+			{
+				RenderTexture.active = previous;
+				RenderTexture.ReleaseTemporary(renderTexture);
+				UnityEngine.Object.Destroy(sourceTexture);
+				UnityEngine.Object.Destroy(resizedTexture);
 			}
 		}
 
