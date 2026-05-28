@@ -8,17 +8,17 @@ namespace UiEffect
 
 		public static List<T> Get()
 		{
-			throw null;
+			return s_ListPool.Get();
 		}
 
 		public static void Release(List<T> toRelease)
 		{
-			throw null;
+			s_ListPool.Release(toRelease);
 		}
 
 		static UiEffectListPool()
 		{
-			throw null;
+			s_ListPool = new UiEffectObjectPool<List<T>>(null, list => list.Clear());
 		}
 	}
 }

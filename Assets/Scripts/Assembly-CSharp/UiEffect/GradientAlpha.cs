@@ -41,11 +41,11 @@ namespace UiEffect
 		{
 			get
 			{
-				throw null;
+				return m_alphaTop;
 			}
 			set
 			{
-				throw null;
+				SetAlpha(ref m_alphaTop, value);
 			}
 		}
 
@@ -53,11 +53,11 @@ namespace UiEffect
 		{
 			get
 			{
-				throw null;
+				return m_alphaBottom;
 			}
 			set
 			{
-				throw null;
+				SetAlpha(ref m_alphaBottom, value);
 			}
 		}
 
@@ -65,11 +65,11 @@ namespace UiEffect
 		{
 			get
 			{
-				throw null;
+				return m_alphaLeft;
 			}
 			set
 			{
-				throw null;
+				SetAlpha(ref m_alphaLeft, value);
 			}
 		}
 
@@ -77,11 +77,11 @@ namespace UiEffect
 		{
 			get
 			{
-				throw null;
+				return m_alphaRight;
 			}
 			set
 			{
-				throw null;
+				SetAlpha(ref m_alphaRight, value);
 			}
 		}
 
@@ -89,11 +89,11 @@ namespace UiEffect
 		{
 			get
 			{
-				throw null;
+				return m_gradientOffsetVertical;
 			}
 			set
 			{
-				throw null;
+				SetOffset(ref m_gradientOffsetVertical, value);
 			}
 		}
 
@@ -101,11 +101,11 @@ namespace UiEffect
 		{
 			get
 			{
-				throw null;
+				return m_gradientOffsetHorizontal;
 			}
 			set
 			{
-				throw null;
+				SetOffset(ref m_gradientOffsetHorizontal, value);
 			}
 		}
 
@@ -113,32 +113,142 @@ namespace UiEffect
 		{
 			get
 			{
-				throw null;
+				return m_splitTextGradient;
 			}
 			set
 			{
-				throw null;
+				if (m_splitTextGradient == value)
+				{
+					return;
+				}
+
+				m_splitTextGradient = value;
+				Refresh();
 			}
 		}
 
 		public override void ModifyMesh(VertexHelper vh)
 		{
-			throw null;
+			if (!IsActive() || vh == null)
+			{
+				return;
+			}
+
+			List<UIVertex> vertices = UiEffectListPool<UIVertex>.Get();
+			vh.GetUIVertexStream(vertices);
+			ModifyVertices(vertices);
+			vh.Clear();
+			vh.AddUIVertexTriangleStream(vertices);
+			UiEffectListPool<UIVertex>.Release(vertices);
 		}
 
 		private void ModifyVertices(List<UIVertex> vList)
 		{
-			throw null;
+			if (!IsActive() || vList == null || vList.Count < 1)
+			{
+				return;
+			}
+
+			float minX = 0f;
+			float minY = 0f;
+			float width = 0f;
+			float height = 0f;
+			for (int i = 0; i < vList.Count; i++)
+			{
+				if (i == 0 || (m_splitTextGradient && i % ONE_TEXT_VERTEX == 0))
+				{
+					int endIndex = m_splitTextGradient ? i + ONE_TEXT_VERTEX : vList.Count;
+					UIVertex first = vList[i];
+					minX = first.position.x;
+					minY = first.position.y;
+					float maxX = first.position.x;
+					float maxY = first.position.y;
+					for (int j = i; j < endIndex && j < vList.Count; j++)
+					{
+						Vector3 position = vList[j].position;
+						if (minX >= position.x)
+						{
+							minX = position.x;
+						}
+						if (minY >= position.y)
+						{
+							minY = position.y;
+						}
+						if (maxX <= position.x)
+						{
+							maxX = position.x;
+						}
+						if (maxY <= position.y)
+						{
+							maxY = position.y;
+						}
+					}
+
+					width = maxX - minX;
+					height = maxY - minY;
+				}
+
+				UIVertex vertex = vList[i];
+				float verticalRate = 0f;
+				if (height > 0f)
+				{
+					verticalRate = (vertex.position.y - minY) / height;
+				}
+				verticalRate = Mathf.Clamp01(verticalRate + m_gradientOffsetVertical);
+
+				float horizontalRate = 0f;
+				if (width > 0f)
+				{
+					horizontalRate = (vertex.position.x - minX) / width;
+				}
+				horizontalRate = Mathf.Clamp01(horizontalRate + m_gradientOffsetHorizontal);
+
+				Color32 color = vertex.color;
+				float sourceAlpha = color.a / 255f;
+				float verticalAlpha = m_alphaBottom + (m_alphaTop - m_alphaBottom) * verticalRate;
+				float horizontalAlpha = m_alphaLeft + (m_alphaRight - m_alphaLeft) * horizontalRate;
+				color.a = (byte)(Mathf.Clamp01(sourceAlpha * verticalAlpha * horizontalAlpha) * 255f);
+				vertex.color = color;
+				vList[i] = vertex;
+			}
 		}
 
 		private void Refresh()
 		{
-			throw null;
+			if (graphic != null)
+			{
+				graphic.SetVerticesDirty();
+			}
 		}
 
 		public GradientAlpha()
 		{
-			throw null;
+			m_alphaTop = 1f;
+			m_alphaBottom = 1f;
+			m_alphaLeft = 1f;
+			m_alphaRight = 1f;
+		}
+
+		private void SetAlpha(ref float field, float value)
+		{
+			if (field == value)
+			{
+				return;
+			}
+
+			field = Mathf.Clamp01(value);
+			Refresh();
+		}
+
+		private void SetOffset(ref float field, float value)
+		{
+			if (field == value)
+			{
+				return;
+			}
+
+			field = Mathf.Clamp(value, -1f, 1f);
+			Refresh();
 		}
 	}
 }

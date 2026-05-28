@@ -152,7 +152,7 @@ namespace Sekai.CustomMusicScoreManager
 			RectTransform topBar = CreatePanel("TopBar", root, new Color32(31, 37, 45, 255));
 			SetStretchTop(topBar, 0f, 0f, 0f, 108f);
 
-			TextMeshProUGUI title = CreateText("Title", topBar, "Open Sekai 0.5.0", 40, FontStyles.Bold, TextAlignmentOptions.Left);
+			TextMeshProUGUI title = CreateText("Title", topBar, $"Open Sekai {Application.version}", 40, FontStyles.Bold, TextAlignmentOptions.Left);
 			SetAnchor(title.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(36f, 0f), new Vector2(560f, 0f));
 
 			RectTransform toolbar = CreateRect("Toolbar", topBar);
@@ -881,7 +881,7 @@ namespace Sekai.CustomMusicScoreManager
 				true);
 			if (dialog != null)
 			{
-				dialog.SetMessageBodyText("Delete this score?\n\n" + title + "\n\nThis action cannot be undone.");
+				dialog.SetMessageBodyText("确定要删除谱面吗？\n\n" + title + "\n\n这个操作无法撤销。");
 				return;
 			}
 
