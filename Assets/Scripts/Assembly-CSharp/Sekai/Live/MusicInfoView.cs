@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using DG.Tweening;
@@ -491,8 +491,8 @@ namespace Sekai.Live
 
 			try
 			{
-				CustomMusicScorePackage package = CustomMusicScoreStorage.LoadPackage(bootData.CustomMusicScorePath);
-				string jacketPath = package?.JacketPath;
+				CustomMusicScoreEntry entry = CustomMusicScoreStorage.LoadEntry(bootData.CustomMusicScorePath);
+				string jacketPath = entry?.JacketPath;
 				if (string.IsNullOrEmpty(jacketPath) || !File.Exists(jacketPath))
 				{
 					return null;

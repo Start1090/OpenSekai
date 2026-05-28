@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -44,22 +44,22 @@ namespace Sekai.CustomMusicScoreManager
 			List<CustomMusicScoreManagerItem> items = new List<CustomMusicScoreManagerItem>();
 			foreach (string directory in Directory.GetDirectories(CustomMusicScoreStorage.RootDirectory))
 			{
-				CustomMusicScorePackage package = CustomMusicScoreStorage.LoadPackage(directory);
-				if (package == null)
+				CustomMusicScoreEntry entry = CustomMusicScoreStorage.LoadEntry(directory);
+				if (entry == null)
 				{
 					continue;
 				}
 
-				items.Add(CreateItem(package));
+				items.Add(CreateItem(entry));
 			}
 
 			return items
 				.OrderByDescending(x => x.LastWriteTime)
-				.ThenBy(x => x.Package.Manifest.scoreTitle, StringComparer.OrdinalIgnoreCase)
+				.ThenBy(x => x.Entry.Manifest.scoreTitle, StringComparer.OrdinalIgnoreCase)
 				.ToArray();
 		}
 
-		public static CustomMusicScorePackage CreateNewPackage()
+		public static CustomMusicScoreEntry CreateNewEntry()
 		{
 			Directory.CreateDirectory(CustomMusicScoreStorage.RootDirectory);
 			CustomMusicScoreManifest manifest = new CustomMusicScoreManifest
@@ -87,10 +87,10 @@ namespace Sekai.CustomMusicScoreManager
 			Directory.CreateDirectory(directory);
 			WriteManifest(directory, manifest);
 			WriteDefaultScore(directory, manifest);
-			return CustomMusicScoreStorage.LoadPackage(directory);
+			return CustomMusicScoreStorage.LoadEntry(directory);
 		}
 
-		public static CustomMusicScorePackage DuplicatePackage(CustomMusicScorePackage source)
+		public static CustomMusicScoreEntry DuplicateEntry(CustomMusicScoreEntry source)
 		{
 			if (source == null || !Directory.Exists(source.RootDirectory))
 			{
@@ -105,18 +105,18 @@ namespace Sekai.CustomMusicScoreManager
 			string destination = GetUniqueDirectory(Path.Combine(CustomMusicScoreStorage.RootDirectory, CustomMusicScoreStorage.CreateFolderName(manifest)));
 			CopyDirectory(source.RootDirectory, destination);
 			WriteManifest(destination, manifest);
-			return CustomMusicScoreStorage.LoadPackage(destination);
+			return CustomMusicScoreStorage.LoadEntry(destination);
 		}
 
-		public static void DeletePackage(CustomMusicScorePackage package)
+		public static void DeleteEntry(CustomMusicScoreEntry entry)
 		{
-			if (package == null || string.IsNullOrEmpty(package.RootDirectory) || !Directory.Exists(package.RootDirectory))
+			if (entry == null || string.IsNullOrEmpty(entry.RootDirectory) || !Directory.Exists(entry.RootDirectory))
 			{
 				return;
 			}
 
 			string root = Path.GetFullPath(CustomMusicScoreStorage.RootDirectory);
-			string target = Path.GetFullPath(package.RootDirectory);
+			string target = Path.GetFullPath(entry.RootDirectory);
 			if (!target.StartsWith(root, StringComparison.OrdinalIgnoreCase))
 			{
 				throw new InvalidOperationException("Refusing to delete a folder outside CustomMusicScores.");
@@ -125,14 +125,14 @@ namespace Sekai.CustomMusicScoreManager
 			Directory.Delete(target, true);
 		}
 
-		public static CustomMusicScorePackage ImportFolder(string sourceDirectory)
+		public static CustomMusicScoreEntry ImportFolder(string sourceDirectory)
 		{
 			if (string.IsNullOrEmpty(sourceDirectory) || !Directory.Exists(sourceDirectory))
 			{
 				return null;
 			}
 
-			CustomMusicScorePackage source = CustomMusicScoreStorage.LoadPackage(sourceDirectory);
+			CustomMusicScoreEntry source = CustomMusicScoreStorage.LoadEntry(sourceDirectory);
 			if (source == null)
 			{
 				return null;
@@ -143,10 +143,10 @@ namespace Sekai.CustomMusicScoreManager
 			string destination = GetUniqueDirectory(Path.Combine(CustomMusicScoreStorage.RootDirectory, CustomMusicScoreStorage.CreateFolderName(manifest)));
 			CopyDirectory(source.RootDirectory, destination);
 			WriteManifest(destination, manifest);
-			return CustomMusicScoreStorage.LoadPackage(destination);
+			return CustomMusicScoreStorage.LoadEntry(destination);
 		}
 
-		public static CustomMusicScorePackage ImportZip(string zipPath)
+		public static CustomMusicScoreEntry ImportZip(string zipPath)
 		{
 			if (string.IsNullOrEmpty(zipPath) || !File.Exists(zipPath))
 			{
@@ -158,8 +158,8 @@ namespace Sekai.CustomMusicScoreManager
 			try
 			{
 				ZipFile.ExtractToDirectory(zipPath, tempRoot);
-				string packageRoot = FindPackageRoot(tempRoot);
-				return ImportFolder(packageRoot);
+				string entryRoot = FindEntryRoot(tempRoot);
+				return ImportFolder(entryRoot);
 			}
 			finally
 			{
@@ -170,9 +170,9 @@ namespace Sekai.CustomMusicScoreManager
 			}
 		}
 
-		public static string ExportZip(CustomMusicScorePackage package, string destinationPath = null)
+		public static string ExportZip(CustomMusicScoreEntry entry, string destinationPath = null)
 		{
-			if (package == null || !Directory.Exists(package.RootDirectory))
+			if (entry == null || !Directory.Exists(entry.RootDirectory))
 			{
 				return null;
 			}
@@ -181,12 +181,12 @@ namespace Sekai.CustomMusicScoreManager
 			{
 				string exportDirectory = Path.Combine(CustomMusicScoreStorage.RootDirectory, ExportDirectoryName);
 				Directory.CreateDirectory(exportDirectory);
-				string safeTitle = SanitizeFileName(package.Manifest.scoreTitle);
+				string safeTitle = SanitizeFileName(entry.Manifest.scoreTitle);
 				if (string.IsNullOrEmpty(safeTitle))
 				{
 					safeTitle = "Untitled";
 				}
-				destinationPath = Path.Combine(exportDirectory, safeTitle + "_" + package.Manifest.id + ".zip");
+				destinationPath = Path.Combine(exportDirectory, safeTitle + "_" + entry.Manifest.id + ".zip");
 			}
 
 			string directory = Path.GetDirectoryName(destinationPath);
@@ -199,27 +199,27 @@ namespace Sekai.CustomMusicScoreManager
 				File.Delete(destinationPath);
 			}
 
-			ZipFile.CreateFromDirectory(package.RootDirectory, destinationPath, System.IO.Compression.CompressionLevel.Optimal, false);
+			ZipFile.CreateFromDirectory(entry.RootDirectory, destinationPath, System.IO.Compression.CompressionLevel.Optimal, false);
 			return destinationPath;
 		}
 
-		public static CustomMusicScorePackage SaveManifest(CustomMusicScorePackage package, CustomMusicScoreManifest manifest)
+		public static CustomMusicScoreEntry SaveManifest(CustomMusicScoreEntry entry, CustomMusicScoreManifest manifest)
 		{
-			if (package == null || manifest == null)
+			if (entry == null || manifest == null)
 			{
-				return package;
+				return entry;
 			}
 
 			manifest.Normalize();
-			string directory = ResolveManifestSaveDirectory(package, manifest);
+			string directory = ResolveManifestSaveDirectory(entry, manifest);
 			WriteManifest(directory, manifest);
-			return CustomMusicScoreStorage.LoadPackage(directory);
+			return CustomMusicScoreStorage.LoadEntry(directory);
 		}
 
-		public static CustomMusicScorePackage ReplaceAudioFile(CustomMusicScorePackage package, string sourcePath)
+		public static CustomMusicScoreEntry ReplaceAudioFile(CustomMusicScoreEntry entry, string sourcePath)
 		{
-			return ReplacePackageFile(
-				package,
+			return ReplaceEntryFile(
+				entry,
 				sourcePath,
 				"audio",
 				AudioExtensions,
@@ -227,10 +227,10 @@ namespace Sekai.CustomMusicScoreManager
 				(manifest, fileName) => manifest.audioFileName = fileName);
 		}
 
-		public static CustomMusicScorePackage ReplaceJacketFile(CustomMusicScorePackage package, string sourcePath)
+		public static CustomMusicScoreEntry ReplaceJacketFile(CustomMusicScoreEntry entry, string sourcePath)
 		{
-			return ReplacePackageFile(
-				package,
+			return ReplaceEntryFile(
+				entry,
 				sourcePath,
 				"jacket",
 				JacketExtensions,
@@ -239,11 +239,11 @@ namespace Sekai.CustomMusicScoreManager
 				ResizeAndWriteJacketFile);
 		}
 
-		public static CustomMusicScorePackage ReplaceScoreFile(CustomMusicScorePackage package, string sourcePath)
+		public static CustomMusicScoreEntry ReplaceScoreFile(CustomMusicScoreEntry entry, string sourcePath)
 		{
-			if (package == null || string.IsNullOrEmpty(sourcePath) || !File.Exists(sourcePath))
+			if (entry == null || string.IsNullOrEmpty(sourcePath) || !File.Exists(sourcePath))
 			{
-				return package;
+				return entry;
 			}
 
 			string extension = Path.GetExtension(sourcePath);
@@ -252,12 +252,12 @@ namespace Sekai.CustomMusicScoreManager
 				throw new InvalidOperationException("Unsupported score file extension: " + extension);
 			}
 
-			Directory.CreateDirectory(package.RootDirectory);
-			CustomMusicScoreManifest manifest = CloneManifest(package.Manifest);
-			string destinationPath = Path.Combine(package.RootDirectory, "score.json");
+			Directory.CreateDirectory(entry.RootDirectory);
+			CustomMusicScoreManifest manifest = CloneManifest(entry.Manifest);
+			string destinationPath = Path.Combine(entry.RootDirectory, "score.json");
 			string tempCopyPath = null;
 			string readSourcePath = sourcePath;
-			if (IsPathInsideDirectory(package.RootDirectory, sourcePath))
+			if (IsPathInsideDirectory(entry.RootDirectory, sourcePath))
 			{
 				tempCopyPath = Path.Combine(Path.GetTempPath(), "OpenSekaiCustomScoreFile_" + Guid.NewGuid().ToString("N") + extension);
 				File.Copy(sourcePath, tempCopyPath, true);
@@ -266,7 +266,7 @@ namespace Sekai.CustomMusicScoreManager
 
 			try
 			{
-				DeleteExistingScoreFiles(package.RootDirectory, manifest.scoreFileName);
+				DeleteExistingScoreFiles(entry.RootDirectory, manifest.scoreFileName);
 				if (extension.Equals(".json", StringComparison.OrdinalIgnoreCase))
 				{
 					File.Copy(readSourcePath, destinationPath, true);
@@ -278,15 +278,15 @@ namespace Sekai.CustomMusicScoreManager
 					// Original editor import calls SUS.Converter.Convert with isNeedCombo=false.
 					// LongHoldCombo notes are generated later when MusicScoreMakerData is converted for live play.
 					MusicScoreMakerData data = new MusicScoreMakerData(converter.Convert(susText, false, false));
-					data.MusicId = package.MusicId;
+					data.MusicId = entry.MusicId;
 					data.InitializeIdCount();
 					File.WriteAllText(destinationPath, DeepCopyHelper.ToJsonString(data));
 				}
 
 				manifest.scoreFileName = "score.json";
 				manifest.Normalize();
-				WriteManifest(package.RootDirectory, manifest);
-				return CustomMusicScoreStorage.LoadPackage(package.RootDirectory);
+				WriteManifest(entry.RootDirectory, manifest);
+				return CustomMusicScoreStorage.LoadEntry(entry.RootDirectory);
 			}
 			finally
 			{
@@ -297,13 +297,13 @@ namespace Sekai.CustomMusicScoreManager
 			}
 		}
 
-		private static CustomMusicScoreManagerItem CreateItem(CustomMusicScorePackage package)
+		private static CustomMusicScoreManagerItem CreateItem(CustomMusicScoreEntry entry)
 		{
-			string manifestPath = package.ManifestPath;
-			string scorePath = package.ScorePath;
-			string audioPath = package.AudioPath;
-			string jacketPath = package.JacketPath;
-			DateTime lastWriteTime = Directory.GetLastWriteTime(package.RootDirectory);
+			string manifestPath = entry.ManifestPath;
+			string scorePath = entry.ScorePath;
+			string audioPath = entry.AudioPath;
+			string jacketPath = entry.JacketPath;
+			DateTime lastWriteTime = Directory.GetLastWriteTime(entry.RootDirectory);
 			if (File.Exists(manifestPath))
 			{
 				lastWriteTime = Max(lastWriteTime, File.GetLastWriteTime(manifestPath));
@@ -314,7 +314,7 @@ namespace Sekai.CustomMusicScoreManager
 			}
 
 			return new CustomMusicScoreManagerItem(
-				package,
+				entry,
 				lastWriteTime,
 				File.Exists(manifestPath),
 				File.Exists(scorePath),
@@ -341,9 +341,9 @@ namespace Sekai.CustomMusicScoreManager
 			File.WriteAllText(Path.Combine(directory, CustomMusicScoreStorage.ManifestFileName), json);
 		}
 
-		private static string ResolveManifestSaveDirectory(CustomMusicScorePackage package, CustomMusicScoreManifest manifest)
+		private static string ResolveManifestSaveDirectory(CustomMusicScoreEntry entry, CustomMusicScoreManifest manifest)
 		{
-			string currentDirectory = Path.GetFullPath(package.RootDirectory);
+			string currentDirectory = Path.GetFullPath(entry.RootDirectory);
 			if (!Directory.Exists(currentDirectory))
 			{
 				return currentDirectory;
@@ -367,8 +367,8 @@ namespace Sekai.CustomMusicScoreManager
 			return destination;
 		}
 
-		private static CustomMusicScorePackage ReplacePackageFile(
-			CustomMusicScorePackage package,
+		private static CustomMusicScoreEntry ReplaceEntryFile(
+			CustomMusicScoreEntry entry,
 			string sourcePath,
 			string fixedBaseName,
 			HashSet<string> allowedExtensions,
@@ -376,9 +376,9 @@ namespace Sekai.CustomMusicScoreManager
 			Action<CustomMusicScoreManifest, string> setFileName,
 			Action<string, string, string> writeFile = null)
 		{
-			if (package == null || string.IsNullOrEmpty(sourcePath) || !File.Exists(sourcePath))
+			if (entry == null || string.IsNullOrEmpty(sourcePath) || !File.Exists(sourcePath))
 			{
-				return package;
+				return entry;
 			}
 
 			string extension = ResolveSupportedExtension(sourcePath, allowedExtensions);
@@ -387,13 +387,13 @@ namespace Sekai.CustomMusicScoreManager
 				throw new InvalidOperationException("Unsupported file extension: " + extension);
 			}
 
-			Directory.CreateDirectory(package.RootDirectory);
-			CustomMusicScoreManifest manifest = CloneManifest(package.Manifest);
+			Directory.CreateDirectory(entry.RootDirectory);
+			CustomMusicScoreManifest manifest = CloneManifest(entry.Manifest);
 			string fileName = fixedBaseName + extension.ToLowerInvariant();
-			string destinationPath = Path.Combine(package.RootDirectory, fileName);
+			string destinationPath = Path.Combine(entry.RootDirectory, fileName);
 			string copySourcePath = sourcePath;
 			string tempCopyPath = null;
-			if (IsPathInsideDirectory(package.RootDirectory, sourcePath))
+			if (IsPathInsideDirectory(entry.RootDirectory, sourcePath))
 			{
 				tempCopyPath = Path.Combine(Path.GetTempPath(), "OpenSekaiCustomScoreFile_" + Guid.NewGuid().ToString("N") + extension);
 				File.Copy(sourcePath, tempCopyPath, true);
@@ -402,7 +402,7 @@ namespace Sekai.CustomMusicScoreManager
 
 			try
 			{
-				DeleteExistingPackageSlotFiles(package.RootDirectory, fixedBaseName, allowedExtensions, getCurrentFileName?.Invoke(manifest));
+				DeleteExistingEntrySlotFiles(entry.RootDirectory, fixedBaseName, allowedExtensions, getCurrentFileName?.Invoke(manifest));
 				if (writeFile != null)
 				{
 					writeFile(copySourcePath, destinationPath, extension);
@@ -413,8 +413,8 @@ namespace Sekai.CustomMusicScoreManager
 				}
 				setFileName(manifest, Path.GetFileName(destinationPath));
 				manifest.Normalize();
-				WriteManifest(package.RootDirectory, manifest);
-				return CustomMusicScoreStorage.LoadPackage(package.RootDirectory);
+				WriteManifest(entry.RootDirectory, manifest);
+				return CustomMusicScoreStorage.LoadEntry(entry.RootDirectory);
 			}
 			finally
 			{
@@ -534,7 +534,7 @@ namespace Sekai.CustomMusicScoreManager
 			return string.Empty;
 		}
 
-		private static void DeleteExistingPackageSlotFiles(
+		private static void DeleteExistingEntrySlotFiles(
 			string rootDirectory,
 			string fixedBaseName,
 			HashSet<string> allowedExtensions,
@@ -625,7 +625,7 @@ namespace Sekai.CustomMusicScoreManager
 				JsonConvert.SerializeObject(source)) ?? new CustomMusicScoreManifest();
 		}
 
-		private static string FindPackageRoot(string root)
+		private static string FindEntryRoot(string root)
 		{
 			if (File.Exists(Path.Combine(root, CustomMusicScoreStorage.ManifestFileName)))
 			{
@@ -634,7 +634,7 @@ namespace Sekai.CustomMusicScoreManager
 
 			foreach (string directory in Directory.GetDirectories(root))
 			{
-				string result = FindPackageRoot(directory);
+				string result = FindEntryRoot(directory);
 				if (!string.IsNullOrEmpty(result))
 				{
 					return result;

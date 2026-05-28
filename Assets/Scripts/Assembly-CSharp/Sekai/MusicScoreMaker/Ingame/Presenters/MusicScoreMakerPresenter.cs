@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
@@ -1125,7 +1125,7 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 
 		private void ExitToOutGame()
 		{
-			if (_model?.CustomMusicScorePackage != null || _fromScreenType == MenuScreenType.MusicScoreMakerTop)
+			if (_model?.CustomMusicScoreEntry != null || _fromScreenType == MenuScreenType.MusicScoreMakerTop)
 			{
 				ReturnToMusicScoreMakerTop();
 				return;
@@ -1156,12 +1156,12 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 
 		private void SaveCustomMusicScoreBeforeReturningToManager()
 		{
-			if (_model?.CustomMusicScorePackage == null)
+			if (_model?.CustomMusicScoreEntry == null)
 			{
 				return;
 			}
 
-			if (!TrySaveCustomMusicScorePackage())
+			if (!TrySaveCustomMusicScoreEntry())
 			{
 				UnityEngine.Debug.LogWarning("Failed to save custom music score before returning to manager.");
 			}
@@ -1302,11 +1302,11 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 			}
 
 			await UniTask.WhenAll(WaitMusicReady(token), _view != null ? _view.Setup(token, _model?.MusicId ?? 0) : UniTask.CompletedTask);
-			if (_model?.CustomMusicScorePackage != null)
+			if (_model?.CustomMusicScoreEntry != null)
 			{
 				// MusicScoreMakerView.Setup initializes Background2DView and clears jacket renderers.
-				// Re-apply the local jacket after that setup pass so package artwork survives boot.
-				await UpdateBackground2DJacketAsync(_model.CustomMusicScorePackage.JacketPath, token);
+				// Re-apply the local jacket after that setup pass so entry artwork survives boot.
+				await UpdateBackground2DJacketAsync(_model.CustomMusicScoreEntry.JacketPath, token);
 			}
 			if (_view != null)
 			{
@@ -2784,27 +2784,27 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 			_model.UpdateSavedDataHash();
 		}
 
-		public UniTask CreateCustomMusicScore(CustomMusicScorePackage package, MusicScoreMakerData musicScore, long focusTicks, CancellationToken token)
+		public UniTask CreateCustomMusicScore(CustomMusicScoreEntry entry, MusicScoreMakerData musicScore, long focusTicks, CancellationToken token)
 		{
 			token.ThrowIfCancellationRequested();
-			if (_model == null || package == null)
+			if (_model == null || entry == null)
 			{
 				return UniTask.CompletedTask;
 			}
 
-			CustomMusicScoreManifest manifest = package.Manifest;
-			_model.CustomMusicScorePackage = package;
+			CustomMusicScoreManifest manifest = entry.Manifest;
+			_model.CustomMusicScoreEntry = entry;
 			_model.Difficulty = manifest.musicDifficultyType;
 			_model.VocalId = 0;
-			_model.MasterMusicSec = package.MusicDurationSec;
+			_model.MasterMusicSec = entry.MusicDurationSec;
 			_model.FillerSec = manifest.fillerSec;
-			_model.AssetbundleName = package.AudioCueName;
+			_model.AssetbundleName = entry.AudioCueName;
 			_model.LastSelectFile = manifest.scoreFileName;
 
-			MusicScoreMakerData data = musicScore ?? package.LoadScore();
+			MusicScoreMakerData data = musicScore ?? entry.LoadScore();
 			if (data == null)
 			{
-				data = LoadMusicScoreMakerData(package.MusicId, manifest.musicDifficultyType, clearNotes: true);
+				data = LoadMusicScoreMakerData(entry.MusicId, manifest.musicDifficultyType, clearNotes: true);
 			}
 			if (data == null)
 			{
@@ -2812,10 +2812,10 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 				return UniTask.CompletedTask;
 			}
 
-			data.MusicId = package.MusicId;
+			data.MusicId = entry.MusicId;
 			data.InitializeIdCount();
 			_model.MusicScoreMakerData = data;
-			_model.MusicId = package.MusicId;
+			_model.MusicId = entry.MusicId;
 			_model.LiveBundleBuildData = Resources.Load<LiveBundleBuildData>(LiveConfig.ConfigBundleNamePath);
 			_model.FocusTicks = ClampTicksToValidRange(focusTicks);
 			NotifyMusicScoreAndTimelineChanged();
@@ -2843,9 +2843,9 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 			{
 				_model.TimingAdjust = _model.LiveSettings.TimingAdjustData * (1f / 60f);
 			}
-			if (_model.CustomMusicScorePackage != null)
+			if (_model.CustomMusicScoreEntry != null)
 			{
-				await MusicReadyForCustomPackage(_model.CustomMusicScorePackage);
+				await MusicReadyForCustomEntry(_model.CustomMusicScoreEntry);
 				return;
 			}
 			_model.AssetbundleName = ResolveMusicVocalAssetbundleName(musicId, vocalId);
@@ -2895,19 +2895,19 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 			_musicReadyCts = null;
 		}
 
-		private async UniTask MusicReadyForCustomPackage(CustomMusicScorePackage package)
+		private async UniTask MusicReadyForCustomEntry(CustomMusicScoreEntry entry)
 		{
-			if (_model == null || package == null)
+			if (_model == null || entry == null)
 			{
 				return;
 			}
 
-			bool audioRegistered = await package.RegisterAudioAsync(_musicReadyCts != null ? _musicReadyCts.Token : CancellationToken.None);
-			_model.AssetbundleName = package.AudioCueName;
-			_model.FillerSec = package.Manifest.fillerSec;
-			_model.MasterMusicSec = package.MusicDurationSec;
-			_model.MusicLength = audioRegistered && package.AudioLengthMs > 0L
-				? package.AudioLengthMs
+			bool audioRegistered = await entry.RegisterAudioAsync(_musicReadyCts != null ? _musicReadyCts.Token : CancellationToken.None);
+			_model.AssetbundleName = entry.AudioCueName;
+			_model.FillerSec = entry.Manifest.fillerSec;
+			_model.MasterMusicSec = entry.MusicDurationSec;
+			_model.MusicLength = audioRegistered && entry.AudioLengthMs > 0L
+				? entry.AudioLengthMs
 				: Math.Max(_model.MasterMusicSec, 0) * 1000L;
 			_model.UpdateComboCountMinimum(_model.MasterMusicSec);
 			SetFocusTicks(_model.FocusTicks);
@@ -6692,7 +6692,7 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 				int vocalId = _model?.VocalId ?? 0;
 				int deckId = UserDataManager.Instance.SelectedDeckId;
 				MasterMusicAll masterMusicAll = LoadMasterMusicAll(musicId);
-				if (masterMusicAll == null && _model?.CustomMusicScorePackage == null)
+				if (masterMusicAll == null && _model?.CustomMusicScoreEntry == null)
 				{
 					UnityEngine.Debug.LogErrorFormat("MasterMusicAll not found for musicId: {0}", musicId);
 				}
@@ -6749,7 +6749,7 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 					IsFromFullComboCheck = isFromFullComboCheck,
 					IsAllNotesIncludedInTestPlay = isAllNotesIncluded,
 					CurrentMusicScoreScale = _model.CurrentMusicScoreScale,
-					CustomMusicScorePackage = _model.CustomMusicScorePackage
+					CustomMusicScoreEntry = _model.CustomMusicScoreEntry
 				}
 			};
 		}
@@ -6772,7 +6772,7 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 			bootData.MusicCategory = musicCategory;
 			bootData.IsAuto = isAutoPlay;
 			bootData.IsCustomMusicScore = true;
-			bootData.IsOfficialMusicScore = _model?.CustomMusicScorePackage == null;
+			bootData.IsOfficialMusicScore = _model?.CustomMusicScoreEntry == null;
 			bootData.ReturnScreenType = MenuScreenType.MusicScoreMaker;
 			bootData.canSkipDisplayMusicInfo = true;
 
@@ -6780,30 +6780,30 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 			if (bootData.MusicData != null)
 			{
 				string cueName = ResolveTestPlayCueName(musicId, vocalId);
-				MasterMusicAll masterMusicAll = _model?.CustomMusicScorePackage == null ? LoadMasterMusicAll(musicId) : null;
+				MasterMusicAll masterMusicAll = _model?.CustomMusicScoreEntry == null ? LoadMasterMusicAll(musicId) : null;
 				bootData.MusicData.Music = masterMusicAll?.music ?? CreateTestPlayMusic(musicId, cueName);
 				bootData.MusicData.Difficulty = difficulty;
-				bootData.MusicData.Vocal = FindMasterMusicVocal(masterMusicAll, vocalId) ?? CreateTestPlayVocal(musicId, vocalId, cueName, _model?.CustomMusicScorePackage?.Manifest.singer);
+				bootData.MusicData.Vocal = FindMasterMusicVocal(masterMusicAll, vocalId) ?? CreateTestPlayVocal(musicId, vocalId, cueName, _model?.CustomMusicScoreEntry?.Manifest.singer);
 				bootData.MusicData.Score = new MasterPlayLevelScore
 				{
 					liveType = LiveType.solo.ToString(),
-					playLevel = difficulty?.playLevel ?? _model?.CustomMusicScorePackage?.Manifest.playLevel ?? 0
+					playLevel = difficulty?.playLevel ?? _model?.CustomMusicScoreEntry?.Manifest.playLevel ?? 0
 				};
 				bootData.MusicData.IsTestPlay = true;
 				bootData.MusicData.IsUseCustomScore = true;
-				bootData.MusicData.CustomPlayLevel = difficulty?.playLevel ?? _model?.CustomMusicScorePackage?.Manifest.playLevel ?? 0;
+				bootData.MusicData.CustomPlayLevel = difficulty?.playLevel ?? _model?.CustomMusicScoreEntry?.Manifest.playLevel ?? 0;
 				bootData.MusicData.MusicScore = musicScore;
 				bootData.MusicData.StartMusicTimeMs = MusicScoreMakerSettingsManager.CalcStartMusicTimeMs(bootData, Mathf.FloorToInt(_model?.FillerSec ?? 0f));
 				bootData.MusicData.PlayStartEffectEnabled = false;
 			}
 
-			CustomMusicScorePackage package = _model?.CustomMusicScorePackage;
-			if (package != null)
+			CustomMusicScoreEntry entry = _model?.CustomMusicScoreEntry;
+			if (entry != null)
 			{
-				bootData.CustomMusicScoreId = package.Manifest.id;
-				bootData.CustomMusicScorePath = package.RootDirectory;
-				bootData.CustomMusicScoreTitle = package.Manifest.scoreTitle;
-				bootData.CustomMusicScoreAuthorName = package.Manifest.userName;
+				bootData.CustomMusicScoreId = entry.Manifest.id;
+				bootData.CustomMusicScorePath = entry.RootDirectory;
+				bootData.CustomMusicScoreTitle = entry.Manifest.scoreTitle;
+				bootData.CustomMusicScoreAuthorName = entry.Manifest.userName;
 			}
 
 			UserDataManager.Instance.FreeLiveBootData = bootData;
@@ -6822,7 +6822,7 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 				id = _model?.BaseMusicDifficultyId ?? MasterMusicDifficulty.INVALID_ID,
 				musicId = musicId,
 				musicDifficulty = NormalizeTestPlayDifficulty(_model?.Difficulty),
-				playLevel = _model?.CustomMusicScorePackage?.Manifest.playLevel ?? 0,
+				playLevel = _model?.CustomMusicScoreEntry?.Manifest.playLevel ?? 0,
 				totalNoteCount = countInfo.TotalComboCount
 			};
 		}
@@ -6901,19 +6901,19 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 
 		private MasterMusic CreateTestPlayMusic(int musicId, string cueName)
 		{
-			CustomMusicScorePackage package = _model?.CustomMusicScorePackage;
-			if (package != null)
+			CustomMusicScoreEntry entry = _model?.CustomMusicScoreEntry;
+			if (entry != null)
 			{
 				return new MasterMusic
 				{
 					id = musicId,
-					title = package.Manifest.title,
-					lyricist = package.Manifest.lyricist,
-					composer = package.Manifest.composer,
-					arranger = package.Manifest.arranger,
+					title = entry.Manifest.title,
+					lyricist = entry.Manifest.lyricist,
+					composer = entry.Manifest.composer,
+					arranger = entry.Manifest.arranger,
 					assetbundleName = cueName,
-					fillerSec = package.Manifest.fillerSec,
-					secForMusicScoreMaker = package.MusicDurationSec,
+					fillerSec = entry.Manifest.fillerSec,
+					secForMusicScoreMaker = entry.MusicDurationSec,
 					isAvailableForMusicScoreMaker = true
 				};
 			}
@@ -6943,10 +6943,10 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 
 		private string ResolveTestPlayCueName(int musicId, int vocalId)
 		{
-			CustomMusicScorePackage package = _model?.CustomMusicScorePackage;
-			if (package != null)
+			CustomMusicScoreEntry entry = _model?.CustomMusicScoreEntry;
+			if (entry != null)
 			{
-				return package.AudioCueName;
+				return entry.AudioCueName;
 			}
 			MasterMusicVocal vocal = ResolveMasterMusicVocal(musicId, vocalId);
 			if (!string.IsNullOrEmpty(vocal?.assetbundleName))
@@ -7053,7 +7053,7 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 
 		private void QuickSaveMusicScore(QuickSaveMusicScoreEvent e)
 		{
-			if (!TrySaveCustomMusicScorePackage())
+			if (!TrySaveCustomMusicScoreEntry())
 			{
 				SaveMusicScore(string.IsNullOrEmpty(_model?.LastSelectFile) ? "quick_save.json" : _model.LastSelectFile);
 			}
@@ -7125,7 +7125,7 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 
 		private void SaveMusicScore(SaveMusicScoreEvent e)
 		{
-			if ((e == null || string.IsNullOrEmpty(e.FileName)) && TrySaveCustomMusicScorePackage())
+			if ((e == null || string.IsNullOrEmpty(e.FileName)) && TrySaveCustomMusicScoreEntry())
 			{
 				return;
 			}
@@ -7154,19 +7154,19 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 			UnityEngine.Debug.Log($"MusicScoreMaker saved: {fileName}");
 		}
 
-		private bool TrySaveCustomMusicScorePackage()
+		private bool TrySaveCustomMusicScoreEntry()
 		{
 			MusicScoreMakerData data = CurrentData();
-			CustomMusicScorePackage package = _model?.CustomMusicScorePackage;
-			if (data == null || package == null)
+			CustomMusicScoreEntry entry = _model?.CustomMusicScoreEntry;
+			if (data == null || entry == null)
 			{
 				return false;
 			}
 
-			CustomMusicScoreStorage.SaveScore(package, data);
-			_model.LastSelectFile = package.Manifest.scoreFileName;
+			CustomMusicScoreStorage.SaveScore(entry, data);
+			_model.LastSelectFile = entry.Manifest.scoreFileName;
 			_model.UpdateSavedDataHash();
-			UnityEngine.Debug.Log($"Custom music score saved: {package.ScorePath}");
+			UnityEngine.Debug.Log($"Custom music score saved: {entry.ScorePath}");
 			return true;
 		}
 

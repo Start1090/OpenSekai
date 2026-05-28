@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -483,7 +483,7 @@ namespace Sekai.MusicScoreMaker.Ingame.Models
 		}
 
 		[CanBeNull]
-		public CustomMusicScorePackage CustomMusicScorePackage
+		public CustomMusicScoreEntry CustomMusicScoreEntry
 		{
 			[CompilerGenerated]
 			get;

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -164,8 +164,8 @@ namespace Sekai.CustomMusicScoreManager
 			toolbarLayout.spacing = 14f;
 			CreateButton("SettingsButton", toolbar, "Settings", OpenSettings, 150f, 56f);
 			CreateButton("RefreshButton", toolbar, "Refresh", RefreshList, 150f, 56f);
-			CreateButton("NewButton", toolbar, "New", CreatePackage, 132f, 56f);
-			CreateButton("ImportButton", toolbar, "Import", ImportPackage, 150f, 56f);
+			CreateButton("NewButton", toolbar, "New", CreateEntry, 132f, 56f);
+			CreateButton("ImportButton", toolbar, "Import", ImportEntry, 150f, 56f);
 
 			RectTransform body = CreateRect("Body", root);
 			SetStretchOffsets(body, 28f, 28f, 28f, 136f);
@@ -175,13 +175,13 @@ namespace Sekai.CustomMusicScoreManager
 
 			RectTransform listHeader = CreateRect("ListHeader", listPanel);
 			SetStretchTop(listHeader, 18f, 20f, 18f, 50f);
-			TextMeshProUGUI listTitle = CreateText("ListTitle", listHeader, "Local Packages", 26, FontStyles.Bold, TextAlignmentOptions.Left);
+			TextMeshProUGUI listTitle = CreateText("ListTitle", listHeader, "Local Scores", 26, FontStyles.Bold, TextAlignmentOptions.Left);
 			Stretch(listTitle.rectTransform);
 
-			ScrollRect scrollRect = CreateScrollRect("PackageScroll", listPanel, out _listContent);
+			ScrollRect scrollRect = CreateScrollRect("ScoreScroll", listPanel, out _listContent);
 			SetStretchOffsets(scrollRect.GetComponent<RectTransform>(), 16f, 16f, 16f, 88f);
 
-			_emptyText = CreateText("EmptyText", listPanel, "No local package", 24, FontStyles.Normal, TextAlignmentOptions.Center);
+			_emptyText = CreateText("EmptyText", listPanel, "No local score", 24, FontStyles.Normal, TextAlignmentOptions.Center);
 			SetStretchOffsets(_emptyText.rectTransform, 28f, 100f, 28f, 100f);
 
 			RectTransform detailPanel = CreatePanel("DetailPanel", body, new Color32(28, 34, 42, 255));
@@ -191,7 +191,7 @@ namespace Sekai.CustomMusicScoreManager
 			SetAnchor(_jacketImage.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(28f, -28f), new Vector2(200f, 200f));
 			_jacketImage.preserveAspect = true;
 
-			_detailTitle = CreateText("DetailTitle", detailPanel, "Select a package", 38, FontStyles.Bold, TextAlignmentOptions.Left);
+			_detailTitle = CreateText("DetailTitle", detailPanel, "Select a score", 38, FontStyles.Bold, TextAlignmentOptions.Left);
 			SetStretchTop(_detailTitle.rectTransform, 252f, 30f, 30f, 54f);
 
 			_detailMeta = CreateText("DetailMeta", detailPanel, string.Empty, 22, FontStyles.Normal, TextAlignmentOptions.Left);
@@ -521,10 +521,10 @@ namespace Sekai.CustomMusicScoreManager
 			CustomMusicScoreManagerItem selected = null;
 			if (_selected != null)
 			{
-				string selectedPath = _selected.Package.RootDirectory;
+				string selectedPath = _selected.Entry.RootDirectory;
 				for (int i = 0; i < _items.Count; i++)
 				{
-					if (string.Equals(_items[i].Package.RootDirectory, selectedPath, StringComparison.OrdinalIgnoreCase))
+					if (string.Equals(_items[i].Entry.RootDirectory, selectedPath, StringComparison.OrdinalIgnoreCase))
 					{
 						selected = _items[i];
 						break;
@@ -532,12 +532,12 @@ namespace Sekai.CustomMusicScoreManager
 				}
 			}
 			UpdateSelection(selected ?? (_items.Count > 0 ? _items[0] : null));
-			SetStatus("Loaded " + _items.Count.ToString(CultureInfo.InvariantCulture) + " package(s).");
+			SetStatus("Loaded " + _items.Count.ToString(CultureInfo.InvariantCulture) + " score(s).");
 		}
 
 		private RowView CreateRow(RectTransform parent, CustomMusicScoreManagerItem item)
 		{
-			GameObject root = new GameObject("PackageCell", typeof(RectTransform), typeof(Image), typeof(Button), typeof(LayoutElement));
+			GameObject root = new GameObject("EntryCell", typeof(RectTransform), typeof(Image), typeof(Button), typeof(LayoutElement));
 			root.transform.SetParent(parent, false);
 			RectTransform rect = root.GetComponent<RectTransform>();
 			rect.sizeDelta = new Vector2(0f, 116f);
@@ -551,17 +551,17 @@ namespace Sekai.CustomMusicScoreManager
 			button.targetGraphic = image;
 			button.onClick.AddListener(() => UpdateSelection(item));
 
-			TextMeshProUGUI title = CreateText("Title", rect, item.Package.Manifest.scoreTitle, 26, FontStyles.Bold, TextAlignmentOptions.Left);
+			TextMeshProUGUI title = CreateText("Title", rect, item.Entry.Manifest.scoreTitle, 26, FontStyles.Bold, TextAlignmentOptions.Left);
 			SetAnchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 1f), new Vector2(22f, -14f), new Vector2(-44f, 36f));
 
-			string metaText = item.Package.Manifest.title;
-			if (!string.IsNullOrEmpty(item.Package.Manifest.userName))
+			string metaText = item.Entry.Manifest.title;
+			if (!string.IsNullOrEmpty(item.Entry.Manifest.userName))
 			{
-				metaText += "  " + item.Package.Manifest.userName;
+				metaText += "  " + item.Entry.Manifest.userName;
 			}
-			if (!string.IsNullOrEmpty(item.Package.Manifest.musicDifficultyType))
+			if (!string.IsNullOrEmpty(item.Entry.Manifest.musicDifficultyType))
 			{
-				metaText += "  " + item.Package.Manifest.musicDifficultyType.ToUpperInvariant();
+				metaText += "  " + item.Entry.Manifest.musicDifficultyType.ToUpperInvariant();
 			}
 			TextMeshProUGUI meta = CreateText("Meta", rect, metaText, 20, FontStyles.Normal, TextAlignmentOptions.Left);
 			SetAnchor(meta.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0f, 0f), new Vector2(22f, 16f), new Vector2(-210f, 30f));
@@ -596,7 +596,7 @@ namespace Sekai.CustomMusicScoreManager
 
 			if (!hasSelection)
 			{
-				_detailTitle.text = "Select a package";
+				_detailTitle.text = "Select a score";
 				_detailMeta.text = string.Empty;
 				_detailStatus.text = string.Empty;
 				ClearLoadedJacket();
@@ -604,61 +604,61 @@ namespace Sekai.CustomMusicScoreManager
 				return;
 			}
 
-			CustomMusicScoreManifest manifest = item.Package.Manifest;
+			CustomMusicScoreManifest manifest = item.Entry.Manifest;
 			_detailTitle.text = manifest.scoreTitle;
 			_detailMeta.text = string.Format(
 				CultureInfo.InvariantCulture,
 				"title: {0}\nid: {1}\npath: {2}\nupdated: {3:yyyy-MM-dd HH:mm}",
 				manifest.title,
 				manifest.id,
-				item.Package.RootDirectory,
+				item.Entry.RootDirectory,
 				item.LastWriteTime);
 			_detailStatus.text = item.StatusText;
 			_detailStatus.color = item.HasAudio && item.HasScore ? new Color32(126, 221, 166, 255) : new Color32(255, 184, 100, 255);
-			LoadJacket(item.Package.JacketPath);
+			LoadJacket(item.Entry.JacketPath);
 			LoadForm(manifest);
 		}
 
-		private void CreatePackage()
+		private void CreateEntry()
 		{
-			CustomMusicScorePackage package = CustomMusicScoreManagerService.CreateNewPackage();
-			_selected = package == null ? null : new CustomMusicScoreManagerItem(
-				package,
+			CustomMusicScoreEntry entry = CustomMusicScoreManagerService.CreateNewEntry();
+			_selected = entry == null ? null : new CustomMusicScoreManagerItem(
+				entry,
 				DateTime.Now,
 				true,
-				File.Exists(package.ScorePath),
-				File.Exists(package.AudioPath),
-				File.Exists(package.JacketPath));
+				File.Exists(entry.ScorePath),
+				File.Exists(entry.AudioPath),
+				File.Exists(entry.JacketPath));
 			RefreshList();
-			SetStatus("Created package.");
+			SetStatus("Created score.");
 		}
 
 		private void OpenEditor()
 		{
-			if (_selected?.Package == null)
+			if (_selected?.Entry == null)
 			{
 				return;
 			}
 
-			CustomMusicScorePackage package = CustomMusicScoreStorage.LoadPackage(_selected.Package.RootDirectory);
-			if (package == null)
+			CustomMusicScoreEntry entry = CustomMusicScoreStorage.LoadEntry(_selected.Entry.RootDirectory);
+			if (entry == null)
 			{
-				SetStatus("Package could not be loaded.");
+				SetStatus("Entry could not be loaded.");
 				RefreshList();
 				return;
 			}
 
 			ScreenLayerMusicScoreMaker.BootArg bootArg = new ScreenLayerMusicScoreMaker.BootArg
 			{
-				musicId = package.MusicId,
-				difficulty = package.Manifest.musicDifficultyType,
+				musicId = entry.MusicId,
+				difficulty = entry.Manifest.musicDifficultyType,
 				vocalId = 0,
 				baseMusicDifficultyId = -1,
-				MusicScoreMakerData = package.LoadScore(),
+				MusicScoreMakerData = entry.LoadScore(),
 				LastSavedDataHash = null,
 				CurrentMusicScoreScale = 1f,
 				FromScreenType = MenuScreenType.MusicScoreMakerTop,
-				CustomMusicScorePackage = package
+				CustomMusicScoreEntry = entry
 			};
 
 			ScreenManager.Instance?.PushUIScreen(MenuScreenType.MusicScoreMaker, bootArg, false);
@@ -676,32 +676,32 @@ namespace Sekai.CustomMusicScoreManager
 
 		private async UniTask PlaySelectedAsync(bool isAuto)
 		{
-			if (_selected?.Package == null)
+			if (_selected?.Entry == null)
 			{
 				return;
 			}
 
-			CustomMusicScorePackage package = SaveSelectedManifestFromForm(refreshList: false);
-			package ??= CustomMusicScoreStorage.LoadPackage(_selected.Package.RootDirectory);
-			if (package == null)
+			CustomMusicScoreEntry entry = SaveSelectedManifestFromForm(refreshList: false);
+			entry ??= CustomMusicScoreStorage.LoadEntry(_selected.Entry.RootDirectory);
+			if (entry == null)
 			{
-				SetStatus("Package could not be loaded.");
+				SetStatus("Entry could not be loaded.");
 				RefreshList();
 				return;
 			}
 
-			if (!File.Exists(package.ScorePath))
+			if (!File.Exists(entry.ScorePath))
 			{
 				SetStatus("Score file not found.");
 				return;
 			}
-			if (!File.Exists(package.AudioPath))
+			if (!File.Exists(entry.AudioPath))
 			{
 				SetStatus("Audio file not found.");
 				return;
 			}
 
-			MusicScoreMakerData scoreData = package.LoadScore();
+			MusicScoreMakerData scoreData = entry.LoadScore();
 			if (scoreData == null)
 			{
 				SetStatus("Score file could not be loaded.");
@@ -714,14 +714,14 @@ namespace Sekai.CustomMusicScoreManager
 			}
 
 			SetStatus("Loading audio...");
-			bool audioReady = await package.RegisterAudioAsync(this.GetCancellationTokenOnDestroy());
+			bool audioReady = await entry.RegisterAudioAsync(this.GetCancellationTokenOnDestroy());
 			if (!audioReady)
 			{
 				SetStatus("Audio file could not be loaded.");
 				return;
 			}
 
-			FreeLiveBootData bootData = CreateDirectPlayBootData(package, scoreData, isAuto);
+			FreeLiveBootData bootData = CreateDirectPlayBootData(entry, scoreData, isAuto);
 			if (bootData == null)
 			{
 				SetStatus("Live boot data could not be created.");
@@ -740,9 +740,9 @@ namespace Sekai.CustomMusicScoreManager
 			return data?.NoteList != null && data.NoteList.Exists(note => note != null);
 		}
 
-		private FreeLiveBootData CreateDirectPlayBootData(CustomMusicScorePackage package, MusicScoreMakerData scoreData, bool isAuto)
+		private FreeLiveBootData CreateDirectPlayBootData(CustomMusicScoreEntry entry, MusicScoreMakerData scoreData, bool isAuto)
 		{
-			if (package == null || scoreData == null)
+			if (entry == null || scoreData == null)
 			{
 				return null;
 			}
@@ -750,13 +750,13 @@ namespace Sekai.CustomMusicScoreManager
 			LiveBundleBuildData liveBundleBuildData = Resources.Load<LiveBundleBuildData>(LiveConfig.ConfigBundleNamePath);
 			MusicScore musicScore = scoreData.ToMusicScore(liveBundleBuildData);
 			int deckId = UserDataManager.Instance.SelectedDeckId;
-			MasterMusicDifficulty difficulty = CreateDirectPlayDifficulty(package, musicScore);
+			MasterMusicDifficulty difficulty = CreateDirectPlayDifficulty(entry, musicScore);
 			string difficultyString = difficulty?.musicDifficulty ?? "master";
 			MusicCategory musicCategory = MusicCategory.original;
 
 			// Matches the original manager play route: normal FreeLive, not editor test play.
 			FreeLiveBootData bootData = new FreeLiveBootData(
-				package.MusicId,
+				entry.MusicId,
 				difficultyString,
 				0,
 				deckId,
@@ -774,24 +774,24 @@ namespace Sekai.CustomMusicScoreManager
 			bootData.ReturnScreenType = MenuScreenType.MusicScoreMakerTop;
 			bootData.canSkipDisplayMusicInfo = false;
 			bootData.ReleaseTransitionBeforeMusicStart = true;
-			bootData.CustomMusicScoreId = package.Manifest.id;
-			bootData.CustomMusicScorePath = package.RootDirectory;
-			bootData.CustomMusicScoreTitle = package.Manifest.scoreTitle;
-			bootData.CustomMusicScoreAuthorName = package.Manifest.userName;
+			bootData.CustomMusicScoreId = entry.Manifest.id;
+			bootData.CustomMusicScorePath = entry.RootDirectory;
+			bootData.CustomMusicScoreTitle = entry.Manifest.scoreTitle;
+			bootData.CustomMusicScoreAuthorName = entry.Manifest.userName;
 
 			if (bootData.MusicData != null)
 			{
-				bootData.MusicData.Music = CreateDirectPlayMusic(package);
+				bootData.MusicData.Music = CreateDirectPlayMusic(entry);
 				bootData.MusicData.Difficulty = difficulty;
-				bootData.MusicData.Vocal = CreateDirectPlayVocal(package);
+				bootData.MusicData.Vocal = CreateDirectPlayVocal(entry);
 				bootData.MusicData.Score = new MasterPlayLevelScore
 				{
 					liveType = LiveType.solo.ToString(),
-					playLevel = package.Manifest.playLevel
+					playLevel = entry.Manifest.playLevel
 				};
 				bootData.MusicData.IsTestPlay = false;
 				bootData.MusicData.IsUseCustomScore = true;
-				bootData.MusicData.CustomPlayLevel = package.Manifest.playLevel;
+				bootData.MusicData.CustomPlayLevel = entry.Manifest.playLevel;
 				bootData.MusicData.MusicScore = musicScore;
 				bootData.MusicData.StartMusicTimeMs = 0L;
 				bootData.MusicData.PlayStartEffectEnabled = true;
@@ -800,43 +800,43 @@ namespace Sekai.CustomMusicScoreManager
 			return bootData;
 		}
 
-		private static MasterMusicDifficulty CreateDirectPlayDifficulty(CustomMusicScorePackage package, MusicScore musicScore)
+		private static MasterMusicDifficulty CreateDirectPlayDifficulty(CustomMusicScoreEntry entry, MusicScore musicScore)
 		{
 			return new MasterMusicDifficulty
 			{
 				id = MasterMusicDifficulty.INVALID_ID,
-				musicId = package.MusicId,
-				musicDifficulty = NormalizeDifficulty(package.Manifest.musicDifficultyType),
-				playLevel = package.Manifest.playLevel,
+				musicId = entry.MusicId,
+				musicDifficulty = NormalizeDifficulty(entry.Manifest.musicDifficultyType),
+				playLevel = entry.Manifest.playLevel,
 				totalNoteCount = LiveUtility.CalculateTotalComboCount(musicScore)
 			};
 		}
 
-		private static MasterMusic CreateDirectPlayMusic(CustomMusicScorePackage package)
+		private static MasterMusic CreateDirectPlayMusic(CustomMusicScoreEntry entry)
 		{
 			return new MasterMusic
 			{
-				id = package.MusicId,
-				title = package.Manifest.title,
-				lyricist = package.Manifest.lyricist,
-				composer = package.Manifest.composer,
-				arranger = package.Manifest.arranger,
-				assetbundleName = package.AudioCueName,
-				fillerSec = package.Manifest.fillerSec,
-				secForMusicScoreMaker = package.MusicDurationSec,
+				id = entry.MusicId,
+				title = entry.Manifest.title,
+				lyricist = entry.Manifest.lyricist,
+				composer = entry.Manifest.composer,
+				arranger = entry.Manifest.arranger,
+				assetbundleName = entry.AudioCueName,
+				fillerSec = entry.Manifest.fillerSec,
+				secForMusicScoreMaker = entry.MusicDurationSec,
 				isAvailableForMusicScoreMaker = true
 			};
 		}
 
-		private static MasterMusicVocal CreateDirectPlayVocal(CustomMusicScorePackage package)
+		private static MasterMusicVocal CreateDirectPlayVocal(CustomMusicScoreEntry entry)
 		{
 			return new MasterMusicVocal
 			{
 				id = 0,
-				musicId = package.MusicId,
+				musicId = entry.MusicId,
 				musicVocalType = MusicVocalType.original_song.ToString(),
-				caption = package.Manifest.singer,
-				assetbundleName = package.AudioCueName
+				caption = entry.Manifest.singer,
+				assetbundleName = entry.AudioCueName
 			};
 		}
 
@@ -854,22 +854,53 @@ namespace Sekai.CustomMusicScoreManager
 				return;
 			}
 
-			CustomMusicScorePackage package = CustomMusicScoreManagerService.DuplicatePackage(_selected.Package);
-			_selected = package == null ? null : new CustomMusicScoreManagerItem(package, DateTime.Now, true, File.Exists(package.ScorePath), File.Exists(package.AudioPath), File.Exists(package.JacketPath));
+			CustomMusicScoreEntry entry = CustomMusicScoreManagerService.DuplicateEntry(_selected.Entry);
+			_selected = entry == null ? null : new CustomMusicScoreManagerItem(entry, DateTime.Now, true, File.Exists(entry.ScorePath), File.Exists(entry.AudioPath), File.Exists(entry.JacketPath));
 			RefreshList();
-			SetStatus("Duplicated package.");
+			SetStatus("Duplicated score.");
 		}
 
 		private void DeleteSelected()
 		{
-			if (_selected == null)
+			if (_selected?.Entry == null)
 			{
 				return;
 			}
 
-			string title = _selected.Package.Manifest.scoreTitle;
-			CustomMusicScoreManagerService.DeletePackage(_selected.Package);
-			_selected = null;
+			CustomMusicScoreEntry entry = _selected.Entry;
+			string title = string.IsNullOrWhiteSpace(entry.Manifest.scoreTitle) ? entry.Manifest.title : entry.Manifest.scoreTitle;
+			Common2ButtonDialog dialog = ScreenManager.Instance?.Show2ButtonDialog<Common2ButtonDialog>(
+				DialogType.Common2ButtonDialog,
+				null,
+				"WORD_DELETE",
+				"WORD_CANCEL",
+				() => ConfirmDeleteSelected(entry, title),
+				null,
+				DisplayLayerType.Layer_Dialog,
+				DialogSize.Manual,
+				true);
+			if (dialog != null)
+			{
+				dialog.SetMessageBodyText("Delete this score?\n\n" + title + "\n\nThis action cannot be undone.");
+				return;
+			}
+
+			ConfirmDeleteSelected(entry, title);
+		}
+
+		private void ConfirmDeleteSelected(CustomMusicScoreEntry entry, string title)
+		{
+			if (entry == null)
+			{
+				return;
+			}
+
+			string deletedRoot = entry.RootDirectory;
+			CustomMusicScoreManagerService.DeleteEntry(entry);
+			if (_selected != null && string.Equals(_selected.Entry.RootDirectory, deletedRoot, StringComparison.OrdinalIgnoreCase))
+			{
+				_selected = null;
+			}
 			RefreshList();
 			SetStatus("Deleted " + title + ".");
 		}
@@ -883,58 +914,58 @@ namespace Sekai.CustomMusicScoreManager
 
 			string destination = null;
 #if UNITY_EDITOR || UNITY_STANDALONE
-			string defaultName = _selected.Package.Manifest.scoreTitle + "_" + _selected.Package.Manifest.id;
+			string defaultName = _selected.Entry.Manifest.scoreTitle + "_" + _selected.Entry.Manifest.id;
 			destination = SaveStandaloneFile("Export Custom Music Score", CustomMusicScoreStorage.RootDirectory, defaultName, "zip");
 			if (string.IsNullOrEmpty(destination))
 			{
 				return;
 			}
 #endif
-			string path = CustomMusicScoreManagerService.ExportZip(_selected.Package, destination);
+			string path = CustomMusicScoreManagerService.ExportZip(_selected.Entry, destination);
 			SetStatus(string.IsNullOrEmpty(path) ? "Export failed." : "Exported: " + path);
 		}
 
-		private void ImportPackage()
+		private void ImportEntry()
 		{
 #if UNITY_EDITOR || UNITY_STANDALONE
-			CustomMusicScorePackage package = null;
+			CustomMusicScoreEntry entry = null;
 			string path = PickStandaloneFile(
 				"Import Custom Music Score Zip",
 				string.Empty,
 				new ExtensionFilter("Custom Music Score Zip", "zip"));
 			if (!string.IsNullOrEmpty(path))
 			{
-				package = CustomMusicScoreManagerService.ImportZip(path);
+				entry = CustomMusicScoreManagerService.ImportZip(path);
 			}
 			else
 			{
 				string folder = PickStandaloneFolder("Import Custom Music Score Folder", string.Empty);
 				if (!string.IsNullOrEmpty(folder))
 				{
-					package = CustomMusicScoreManagerService.ImportFolder(folder);
+					entry = CustomMusicScoreManagerService.ImportFolder(folder);
 				}
 			}
-			ApplyImportedPackage(package);
+			ApplyImportedEntry(entry);
 #elif UNITY_ANDROID || UNITY_IOS
 			PickNativeFile(
 				"Import Custom Music Score Zip",
 				"Import canceled or failed.",
-				path => ApplyImportedPackage(CustomMusicScoreManagerService.ImportZip(path)),
+				path => ApplyImportedEntry(CustomMusicScoreManagerService.ImportZip(path)),
 				"zip");
 			return;
 #else
-			SetStatus("Runtime import uses Native File Picker on Android/iOS. Copy packages manually on this platform.");
+			SetStatus("Runtime import uses Native File Picker on Android/iOS. Copy scores manually on this platform.");
 			return;
 #endif
-		}
+        }
 
-		private void ApplyImportedPackage(CustomMusicScorePackage package)
+        private void ApplyImportedEntry(CustomMusicScoreEntry entry)
 		{
-			if (package != null)
+			if (entry != null)
 			{
-				_selected = new CustomMusicScoreManagerItem(package, DateTime.Now, true, File.Exists(package.ScorePath), File.Exists(package.AudioPath), File.Exists(package.JacketPath));
+				_selected = new CustomMusicScoreManagerItem(entry, DateTime.Now, true, File.Exists(entry.ScorePath), File.Exists(entry.AudioPath), File.Exists(entry.JacketPath));
 				RefreshList();
-				SetStatus("Imported package.");
+				SetStatus("Imported score.");
 			}
 			else
 			{
@@ -944,7 +975,7 @@ namespace Sekai.CustomMusicScoreManager
 
 		private void ReplaceSelectedAudio()
 		{
-			if (_selected?.Package == null)
+			if (_selected?.Entry == null)
 			{
 				return;
 			}
@@ -976,7 +1007,7 @@ namespace Sekai.CustomMusicScoreManager
 
 		private void ReplaceSelectedJacket()
 		{
-			if (_selected?.Package == null)
+			if (_selected?.Entry == null)
 			{
 				return;
 			}
@@ -1008,7 +1039,7 @@ namespace Sekai.CustomMusicScoreManager
 
 		private void ReplaceSelectedScore()
 		{
-			if (_selected?.Package == null)
+			if (_selected?.Entry == null)
 			{
 				return;
 			}
@@ -1113,25 +1144,25 @@ namespace Sekai.CustomMusicScoreManager
 
 		private void ReplaceSelectedFile(
 			string sourcePath,
-			Func<CustomMusicScorePackage, string, CustomMusicScorePackage> replaceFile,
+			Func<CustomMusicScoreEntry, string, CustomMusicScoreEntry> replaceFile,
 			string successStatus)
 		{
 			try
 			{
-				CustomMusicScorePackage package = replaceFile(_selected.Package, sourcePath);
-				if (package == null)
+				CustomMusicScoreEntry entry = replaceFile(_selected.Entry, sourcePath);
+				if (entry == null)
 				{
 					SetStatus("Replacement failed.");
 					return;
 				}
 
 				_selected = new CustomMusicScoreManagerItem(
-					package,
+					entry,
 					DateTime.Now,
-					File.Exists(package.ManifestPath),
-					File.Exists(package.ScorePath),
-					File.Exists(package.AudioPath),
-					File.Exists(package.JacketPath));
+					File.Exists(entry.ManifestPath),
+					File.Exists(entry.ScorePath),
+					File.Exists(entry.AudioPath),
+					File.Exists(entry.JacketPath));
 				RefreshList();
 				SetStatus(successStatus + ": " + Path.GetFileName(sourcePath));
 			}
@@ -1143,18 +1174,18 @@ namespace Sekai.CustomMusicScoreManager
 
 		private void SaveSelectedManifest()
 		{
-			CustomMusicScorePackage savedPackage = SaveSelectedManifestFromForm(refreshList: true);
-			SetStatus(savedPackage != null ? "Saved manifest." : "Save manifest failed.");
+			CustomMusicScoreEntry savedEntry = SaveSelectedManifestFromForm(refreshList: true);
+			SetStatus(savedEntry != null ? "Saved manifest." : "Save manifest failed.");
 		}
 
-		private CustomMusicScorePackage SaveSelectedManifestFromForm(bool refreshList)
+		private CustomMusicScoreEntry SaveSelectedManifestFromForm(bool refreshList)
 		{
-			if (_selected?.Package == null)
+			if (_selected?.Entry == null)
 			{
 				return null;
 			}
 
-			CustomMusicScoreManifest manifest = _selected.Package.Manifest;
+			CustomMusicScoreManifest manifest = _selected.Entry.Manifest;
 			manifest.title = _titleInput.text;
 			manifest.scoreTitle = _scoreTitleInput.text;
 			manifest.userName = _userInput.text;
@@ -1180,22 +1211,22 @@ namespace Sekai.CustomMusicScoreManager
 				manifest.fillerSec = filler;
 			}
 
-			CustomMusicScorePackage savedPackage = CustomMusicScoreManagerService.SaveManifest(_selected.Package, manifest);
-			if (savedPackage != null)
+			CustomMusicScoreEntry savedEntry = CustomMusicScoreManagerService.SaveManifest(_selected.Entry, manifest);
+			if (savedEntry != null)
 			{
 				_selected = new CustomMusicScoreManagerItem(
-					savedPackage,
+					savedEntry,
 					DateTime.Now,
-					File.Exists(savedPackage.ManifestPath),
-					File.Exists(savedPackage.ScorePath),
-					File.Exists(savedPackage.AudioPath),
-					File.Exists(savedPackage.JacketPath));
+					File.Exists(savedEntry.ManifestPath),
+					File.Exists(savedEntry.ScorePath),
+					File.Exists(savedEntry.AudioPath),
+					File.Exists(savedEntry.JacketPath));
 			}
 			if (refreshList)
 			{
 				RefreshList();
 			}
-			return savedPackage;
+			return savedEntry;
 		}
 
 		private void LoadForm(CustomMusicScoreManifest manifest)

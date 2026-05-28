@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Sekai.ApiData;
@@ -33,7 +33,7 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 			public bool IsAllNotesIncludedInTestPlay { get; set; }
 			public bool ShouldProceedToPublish { get; set; }
 			public float CurrentMusicScoreScale { get; set; } = 1f;
-			public CustomMusicScorePackage CustomMusicScorePackage { get; set; }
+			public CustomMusicScoreEntry CustomMusicScoreEntry { get; set; }
 			public Action<Action, Action> FinishTransitionCallback { get; set; }
 		}
 
@@ -178,9 +178,9 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 				return;
 			}
 
-			if (bootArg.CustomMusicScorePackage != null)
+			if (bootArg.CustomMusicScoreEntry != null)
 			{
-				await _presenter.CreateCustomMusicScore(bootArg.CustomMusicScorePackage, bootArg.MusicScoreMakerData, bootArg.FocusTicks, token);
+				await _presenter.CreateCustomMusicScore(bootArg.CustomMusicScoreEntry, bootArg.MusicScoreMakerData, bootArg.FocusTicks, token);
 			}
 			else if (bootArg.MusicScoreMakerData != null)
 			{

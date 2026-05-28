@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -19,36 +19,36 @@ namespace Sekai.MusicScoreMaker.Common
 
 		public static string RootDirectory => Path.Combine(Application.persistentDataPath, DirectoryName);
 
-		public static CustomMusicScorePackage[] LoadAllPackages()
+		public static CustomMusicScoreEntry[] LoadAllEntries()
 		{
 			if (!Directory.Exists(RootDirectory))
 			{
-				return Array.Empty<CustomMusicScorePackage>();
+				return Array.Empty<CustomMusicScoreEntry>();
 			}
 
-			List<CustomMusicScorePackage> packages = new List<CustomMusicScorePackage>();
+			List<CustomMusicScoreEntry> entries = new List<CustomMusicScoreEntry>();
 			foreach (string directory in Directory.GetDirectories(RootDirectory))
 			{
-				CustomMusicScorePackage package = LoadPackage(directory);
-				if (package != null)
+				CustomMusicScoreEntry entry = LoadEntry(directory);
+				if (entry != null)
 				{
-					packages.Add(package);
+					entries.Add(entry);
 				}
 			}
 
-			return packages
+			return entries
 				.OrderByDescending(x => File.GetLastWriteTimeUtc(x.ManifestPath))
 				.ThenBy(x => x.Manifest.scoreTitle, StringComparer.OrdinalIgnoreCase)
 				.ToArray();
 		}
 
-		public static CustomMusicScorePackage LoadFirstPackage()
+		public static CustomMusicScoreEntry LoadFirstEntry()
 		{
-			CustomMusicScorePackage[] packages = LoadAllPackages();
-			return packages.Length > 0 ? packages[0] : null;
+			CustomMusicScoreEntry[] entries = LoadAllEntries();
+			return entries.Length > 0 ? entries[0] : null;
 		}
 
-		public static CustomMusicScorePackage LoadPackage(string rootDirectory)
+		public static CustomMusicScoreEntry LoadEntry(string rootDirectory)
 		{
 			if (string.IsNullOrEmpty(rootDirectory))
 			{
@@ -70,7 +70,7 @@ namespace Sekai.MusicScoreMaker.Common
 				}
 
 				manifest.Normalize();
-				return new CustomMusicScorePackage(rootDirectory, manifest);
+				return new CustomMusicScoreEntry(rootDirectory, manifest);
 			}
 			catch (Exception exception)
 			{
@@ -79,14 +79,14 @@ namespace Sekai.MusicScoreMaker.Common
 			}
 		}
 
-		public static void SaveScore(CustomMusicScorePackage package, MusicScoreMakerData data)
+		public static void SaveScore(CustomMusicScoreEntry entry, MusicScoreMakerData data)
 		{
-			if (package == null || data == null)
+			if (entry == null || data == null)
 			{
 				return;
 			}
 
-			package.SaveScore(data);
+			entry.SaveScore(data);
 		}
 
 		public static string GenerateShortId()

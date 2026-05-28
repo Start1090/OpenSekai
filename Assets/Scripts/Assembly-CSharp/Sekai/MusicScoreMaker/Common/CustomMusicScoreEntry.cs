@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Threading;
 using CP;
@@ -10,11 +10,11 @@ using UnityEngine.Networking;
 
 namespace Sekai.MusicScoreMaker.Common
 {
-	public sealed class CustomMusicScorePackage
+	public sealed class CustomMusicScoreEntry
 	{
 		private AudioClip _audioClip;
 
-		public CustomMusicScorePackage(string rootDirectory, CustomMusicScoreManifest manifest)
+		public CustomMusicScoreEntry(string rootDirectory, CustomMusicScoreManifest manifest)
 		{
 			RootDirectory = rootDirectory;
 			Manifest = manifest ?? new CustomMusicScoreManifest();
@@ -35,11 +35,11 @@ namespace Sekai.MusicScoreMaker.Common
 
 		public string ManifestPath => Path.Combine(RootDirectory, CustomMusicScoreStorage.ManifestFileName);
 
-		public string ScorePath => ResolvePackagePath(Manifest.scoreFileName);
+		public string ScorePath => ResolveEntryPath(Manifest.scoreFileName);
 
-		public string AudioPath => ResolvePackagePath(Manifest.audioFileName);
+		public string AudioPath => ResolveEntryPath(Manifest.audioFileName);
 
-		public string JacketPath => ResolvePackagePath(Manifest.jacketFileName);
+		public string JacketPath => ResolveEntryPath(Manifest.jacketFileName);
 
 		public int MusicDurationSec
 		{
@@ -142,7 +142,7 @@ namespace Sekai.MusicScoreMaker.Common
 			}
 		}
 
-		private string ResolvePackagePath(string fileName)
+		private string ResolveEntryPath(string fileName)
 		{
 			string safeFileName = Path.GetFileName(string.IsNullOrEmpty(fileName) ? string.Empty : fileName);
 			return string.IsNullOrEmpty(safeFileName) ? RootDirectory : Path.Combine(RootDirectory, safeFileName);

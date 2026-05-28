@@ -2,8 +2,8 @@
 
 This folder contains the local-only custom music score manager.
 
-- `Runtime/Models`: manifest and score package data types.
-- `Runtime/Services`: filesystem scanning, import/export, and package loading.
+- `Runtime/Models`: manifest and custom score entry data types.
+- `Runtime/Services`: filesystem scanning, import/export, and entry loading.
 - `Runtime/UI`: UGUI screens and widgets.
 - `Resources/Prefabs`: prefabs loaded through Unity `Resources`.
 - `Resources/Screen/Prefabs`: screen-layer prefabs loaded by Sekai's `ScreenLayerData`.
@@ -16,11 +16,11 @@ The first local manager screen is implemented as `ScreenLayerMusicScoreMakerTop.
 It intentionally reuses the existing `MenuScreenType.MusicScoreMakerTop` entry so we do not
 need to add another global screen enum or modify `EntryScreenLayers.asset`.
 
-Local packages are stored under:
+Local score entries are stored under:
 
 `Application.persistentDataPath/CustomMusicScores/<title>_<shortId>/`
 
-Expected package files:
+Expected entry files:
 
 - `manifest.json`
 - `score.json`

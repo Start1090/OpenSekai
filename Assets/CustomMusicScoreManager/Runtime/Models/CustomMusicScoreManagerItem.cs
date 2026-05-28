@@ -1,11 +1,11 @@
-using System;
+﻿using System;
 using Sekai.MusicScoreMaker.Common;
 
 namespace Sekai.CustomMusicScoreManager
 {
 	public sealed class CustomMusicScoreManagerItem
 	{
-		public CustomMusicScorePackage Package { get; }
+		public CustomMusicScoreEntry Entry { get; }
 
 		public DateTime LastWriteTime { get; }
 
@@ -44,14 +44,14 @@ namespace Sekai.CustomMusicScoreManager
 		public bool IsReadyForEdit => HasManifest;
 
 		public CustomMusicScoreManagerItem(
-			CustomMusicScorePackage package,
+			CustomMusicScoreEntry entry,
 			DateTime lastWriteTime,
 			bool hasManifest,
 			bool hasScore,
 			bool hasAudio,
 			bool hasJacket)
 		{
-			Package = package;
+			Entry = entry;
 			LastWriteTime = lastWriteTime;
 			HasManifest = hasManifest;
 			HasScore = hasScore;

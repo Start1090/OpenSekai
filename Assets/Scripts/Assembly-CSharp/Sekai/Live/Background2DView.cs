@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using Sekai.Core.Live;
 using Sekai.MusicScoreMaker.Common;
 using UnityEngine;
@@ -189,8 +189,8 @@ namespace Sekai.Live
 				return null;
 			}
 
-			CustomMusicScorePackage package = CustomMusicScoreStorage.LoadPackage(bootData.CustomMusicScorePath);
-			string jacketPath = package?.JacketPath;
+			CustomMusicScoreEntry entry = CustomMusicScoreStorage.LoadEntry(bootData.CustomMusicScorePath);
+			string jacketPath = entry?.JacketPath;
 			if (string.IsNullOrEmpty(jacketPath) || !File.Exists(jacketPath))
 			{
 				return null;
