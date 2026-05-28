@@ -93,8 +93,14 @@ namespace Sekai.Live
 			base.OnEnable();
 			if (MaskEnabled())
 			{
+				if (maskedMaterial == null)
+				{
+					return;
+				}
+				UpdateTransformInfo();
 				MaskAllChildren();
 				MaskAllManaged();
+				transform.hasChanged = false;
 			}
 		}
 

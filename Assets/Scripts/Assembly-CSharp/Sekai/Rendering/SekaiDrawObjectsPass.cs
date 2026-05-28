@@ -15,13 +15,15 @@ namespace Sekai.Rendering
 		private FilteringSettings m_FilteringSettings;
 		private RenderStateBlock m_RenderStateBlock;
 		private bool m_IsOpaque;
+		private bool m_SkipExecution;
 
-		public SekaiDrawObjectsPass(string profilerTag, ShaderTagId[] shaderTagIds, bool opaque, RenderPassEvent evt, RenderQueueRange renderQueueRange)
+		public SekaiDrawObjectsPass(string profilerTag, ShaderTagId[] shaderTagIds, bool opaque, RenderPassEvent evt, RenderQueueRange renderQueueRange, bool skipExecution = false)
 		{
 			profilingSampler = new ProfilingSampler(nameof(SekaiDrawObjectsPass));
 			m_ProfilingSampler = new ProfilingSampler(profilerTag);
 			renderPassEvent = evt;
 			m_IsOpaque = opaque;
+			m_SkipExecution = skipExecution;
 			m_FilteringSettings = new FilteringSettings(renderQueueRange, ~0);
 			m_RenderStateBlock = new RenderStateBlock(RenderStateMask.Nothing);
 
@@ -32,7 +34,13 @@ namespace Sekai.Rendering
 		}
 
 		public SekaiDrawObjectsPass(string profilerTag, SekaiShaderTagType shaderTagType, bool opaque, RenderPassEvent evt, RenderQueueRange renderQueueRange)
-			: this(profilerTag, new[] { new ShaderTagId(SekaiShaderTag.GetTag(shaderTagType)) }, opaque, evt, renderQueueRange)
+			: this(
+				profilerTag,
+				new[] { new ShaderTagId(SekaiShaderTag.GetTag(shaderTagType)) },
+				opaque,
+				evt,
+				renderQueueRange,
+				shaderTagType == SekaiShaderTagType.Default)
 		{
 		}
 
@@ -54,6 +62,14 @@ namespace Sekai.Rendering
 
 		public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
 		{
+			// Original SekaiRenderer owns the SRPDefaultUnlit draw stage. In this URP 14
+			// port the built-in UniversalRenderer already draws that tag, so replaying
+			// Default here makes transparent UI accumulate alpha twice.
+			if (m_SkipExecution)
+			{
+				return;
+			}
+
 			var cmd = CommandBufferPool.Get();
 			using (new ProfilingScope(cmd, m_ProfilingSampler))
 			{
