@@ -56,6 +56,16 @@ namespace Sekai.CustomMusicScoreManager
 			"append"
 		};
 
+		private static readonly string[] DifficultyDisplayNames =
+		{
+			"EASY",
+			"NORMAL",
+			"HARD",
+			"EXPERT",
+			"MASTER",
+			"APPEND"
+		};
+
 		private static TMP_FontAsset _baseFontEB;
 
 		private static TMP_FontAsset _baseFontDB;
@@ -162,10 +172,10 @@ namespace Sekai.CustomMusicScoreManager
 			toolbarLayout.childControlWidth = false;
 			toolbarLayout.childControlHeight = false;
 			toolbarLayout.spacing = 14f;
-			CreateButton("SettingsButton", toolbar, "Settings", OpenSettings, 150f, 56f);
-			CreateButton("RefreshButton", toolbar, "Refresh", RefreshList, 150f, 56f);
-			CreateButton("NewButton", toolbar, "New", CreateEntry, 132f, 56f);
-			CreateButton("ImportButton", toolbar, "Import", ImportEntry, 150f, 56f);
+			CreateButton("SettingsButton", toolbar, "设置", OpenSettings, 150f, 56f);
+			CreateButton("RefreshButton", toolbar, "刷新", RefreshList, 150f, 56f);
+			CreateButton("NewButton", toolbar, "新建", CreateEntry, 132f, 56f);
+			CreateButton("ImportButton", toolbar, "导入", ImportEntry, 150f, 56f);
 
 			RectTransform body = CreateRect("Body", root);
 			SetStretchOffsets(body, 28f, 28f, 28f, 136f);
@@ -175,13 +185,13 @@ namespace Sekai.CustomMusicScoreManager
 
 			RectTransform listHeader = CreateRect("ListHeader", listPanel);
 			SetStretchTop(listHeader, 18f, 20f, 18f, 50f);
-			TextMeshProUGUI listTitle = CreateText("ListTitle", listHeader, "Local Scores", 26, FontStyles.Bold, TextAlignmentOptions.Left);
+			TextMeshProUGUI listTitle = CreateText("ListTitle", listHeader, "本地谱面", 26, FontStyles.Bold, TextAlignmentOptions.Left);
 			Stretch(listTitle.rectTransform);
 
 			ScrollRect scrollRect = CreateScrollRect("ScoreScroll", listPanel, out _listContent);
 			SetStretchOffsets(scrollRect.GetComponent<RectTransform>(), 16f, 16f, 16f, 88f);
 
-			_emptyText = CreateText("EmptyText", listPanel, "No local score", 24, FontStyles.Normal, TextAlignmentOptions.Center);
+			_emptyText = CreateText("EmptyText", listPanel, "暂无本地谱面", 24, FontStyles.Normal, TextAlignmentOptions.Center);
 			SetStretchOffsets(_emptyText.rectTransform, 28f, 100f, 28f, 100f);
 
 			RectTransform detailPanel = CreatePanel("DetailPanel", body, new Color32(28, 34, 42, 255));
@@ -191,7 +201,7 @@ namespace Sekai.CustomMusicScoreManager
 			SetAnchor(_jacketImage.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(28f, -28f), new Vector2(200f, 200f));
 			_jacketImage.preserveAspect = true;
 
-			_detailTitle = CreateText("DetailTitle", detailPanel, "Select a score", 38, FontStyles.Bold, TextAlignmentOptions.Left);
+			_detailTitle = CreateText("DetailTitle", detailPanel, "请选择谱面", 38, FontStyles.Bold, TextAlignmentOptions.Left);
 			SetStretchTop(_detailTitle.rectTransform, 252f, 30f, 30f, 54f);
 
 			_detailMeta = CreateText("DetailMeta", detailPanel, string.Empty, 22, FontStyles.Normal, TextAlignmentOptions.Left);
@@ -210,12 +220,12 @@ namespace Sekai.CustomMusicScoreManager
 			_actionButtonsLayout.childControlHeight = true;
 			_actionButtonsLayout.childForceExpandWidth = true;
 			_actionButtonsLayout.childForceExpandHeight = false;
-			_editButton = CreateButton("EditButton", actionButtons, "Edit", OpenEditor, ActionButtonWidth, ActionButtonHeight);
-			_playButton = CreateButton("PlayButton", actionButtons, "Play", PlaySelected, ActionButtonWidth, ActionButtonHeight);
-			_autoButton = CreateButton("AutoButton", actionButtons, "Auto", AutoPlaySelected, ActionButtonWidth, ActionButtonHeight);
-			_duplicateButton = CreateButton("DuplicateButton", actionButtons, "Duplicate", DuplicateSelected, ActionButtonWidth, ActionButtonHeight);
-			_exportButton = CreateButton("ExportButton", actionButtons, "Export Zip", ExportSelected, ActionButtonWidth, ActionButtonHeight);
-			_deleteButton = CreateButton("DeleteButton", actionButtons, "Delete", DeleteSelected, ActionButtonWidth, ActionButtonHeight, new Color32(110, 49, 57, 255));
+			_editButton = CreateButton("EditButton", actionButtons, "编辑", OpenEditor, ActionButtonWidth, ActionButtonHeight);
+			_playButton = CreateButton("PlayButton", actionButtons, "游玩", PlaySelected, ActionButtonWidth, ActionButtonHeight);
+			_autoButton = CreateButton("AutoButton", actionButtons, "自动", AutoPlaySelected, ActionButtonWidth, ActionButtonHeight);
+			_duplicateButton = CreateButton("DuplicateButton", actionButtons, "复制", DuplicateSelected, ActionButtonWidth, ActionButtonHeight);
+			_exportButton = CreateButton("ExportButton", actionButtons, "导出ZIP", ExportSelected, ActionButtonWidth, ActionButtonHeight);
+			_deleteButton = CreateButton("DeleteButton", actionButtons, "删除", DeleteSelected, ActionButtonWidth, ActionButtonHeight, new Color32(110, 49, 57, 255));
 
 			ScrollRect formScroll = CreateMaskedScrollRect("ManifestFormScroll", detailPanel, out RectTransform form);
 			_manifestFormScroll = formScroll;
@@ -239,21 +249,21 @@ namespace Sekai.CustomMusicScoreManager
 			ContentSizeFitter fieldFitter = _manifestFieldGrid.gameObject.AddComponent<ContentSizeFitter>();
 			fieldFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-			_titleInput = CreateInputField(_manifestFieldGrid, "Title", "title");
-			_scoreTitleInput = CreateInputField(_manifestFieldGrid, "Score Title", "scoreTitle");
-			_userInput = CreateInputField(_manifestFieldGrid, "Author", "userName");
-			_audioInput = CreateInputField(_manifestFieldGrid, "Audio", "audioFileName", ReplaceSelectedAudio, out _audioSelectButton);
-			_jacketInput = CreateInputField(_manifestFieldGrid, "Jacket", "jacketFileName", ReplaceSelectedJacket, out _jacketSelectButton);
-			_scoreInput = CreateInputField(_manifestFieldGrid, "Score", "scoreFileName", ReplaceSelectedScore, out _scoreSelectButton);
-			_fillerInput = CreateInputField(_manifestFieldGrid, "Filler Sec", "fillerSec");
-			_durationInput = CreateInputField(_manifestFieldGrid, "Duration", "secForMusicScoreMaker");
+			_titleInput = CreateInputField(_manifestFieldGrid, "曲名", "title");
+			_scoreTitleInput = CreateInputField(_manifestFieldGrid, "谱面标题", "scoreTitle");
+			_userInput = CreateInputField(_manifestFieldGrid, "作者", "userName");
+			_audioInput = CreateInputField(_manifestFieldGrid, "音频", "audioFileName", ReplaceSelectedAudio, out _audioSelectButton);
+			_jacketInput = CreateInputField(_manifestFieldGrid, "封面", "jacketFileName", ReplaceSelectedJacket, out _jacketSelectButton);
+			_scoreInput = CreateInputField(_manifestFieldGrid, "谱面", "scoreFileName", ReplaceSelectedScore, out _scoreSelectButton);
+			_fillerInput = CreateInputField(_manifestFieldGrid, "前置空白秒", "fillerSec");
+			_durationInput = CreateInputField(_manifestFieldGrid, "编辑时长秒", "secForMusicScoreMaker");
 			_difficultyButton = CreateDifficultySelector(_manifestFieldGrid);
-			_levelInput = CreateInputField(_manifestFieldGrid, "Level", "playLevel");
-			_composerInput = CreateInputField(_manifestFieldGrid, "Composer", "composer");
-			_lyricistInput = CreateInputField(_manifestFieldGrid, "Lyricist", "lyricist");
-			_arrangerInput = CreateInputField(_manifestFieldGrid, "Arranger", "arranger");
-			_singerInput = CreateInputField(_manifestFieldGrid, "Singer", "singer");
-			_descriptionInput = CreateInputField(_manifestFieldGrid, "Description", "description");
+			_levelInput = CreateInputField(_manifestFieldGrid, "等级", "playLevel");
+			_composerInput = CreateInputField(_manifestFieldGrid, "作曲", "composer");
+			_lyricistInput = CreateInputField(_manifestFieldGrid, "作词", "lyricist");
+			_arrangerInput = CreateInputField(_manifestFieldGrid, "编曲", "arranger");
+			_singerInput = CreateInputField(_manifestFieldGrid, "歌手", "singer");
+			_descriptionInput = CreateInputField(_manifestFieldGrid, "描述", "description");
 			RectTransform saveRow = CreateRect("SaveManifestRow", detailPanel);
 			SetStretchBottom(saveRow, 28f, 28f, 28f, 64f);
 			HorizontalLayoutGroup saveRowGroup = saveRow.gameObject.AddComponent<HorizontalLayoutGroup>();
@@ -262,7 +272,7 @@ namespace Sekai.CustomMusicScoreManager
 			saveRowGroup.childForceExpandWidth = false;
 			saveRowGroup.childForceExpandHeight = false;
 			saveRowGroup.childAlignment = TextAnchor.MiddleLeft;
-			_saveManifestButton = CreateButton("SaveManifestButton", saveRow, "Save Manifest", SaveSelectedManifest, 230f, 58f);
+			_saveManifestButton = CreateButton("SaveManifestButton", saveRow, "保存配置", SaveSelectedManifest, 230f, 58f);
 			_statusText = CreateText("StatusText", saveRow, string.Empty, 21, FontStyles.Normal, TextAlignmentOptions.Right);
 			_statusText.raycastTarget = false;
 			LayoutElement statusLayout = _statusText.gameObject.AddComponent<LayoutElement>();
@@ -291,14 +301,14 @@ namespace Sekai.CustomMusicScoreManager
 			dialogLayout.childForceExpandWidth = true;
 			dialogLayout.childForceExpandHeight = false;
 
-			TextMeshProUGUI title = CreateText("Title", dialog, "Settings", 36, FontStyles.Bold, TextAlignmentOptions.Left);
+			TextMeshProUGUI title = CreateText("Title", dialog, "设置", 36, FontStyles.Bold, TextAlignmentOptions.Left);
 			LayoutElement titleLayout = title.gameObject.AddComponent<LayoutElement>();
 			titleLayout.preferredHeight = 46f;
 
-			_settingLiveBgmInput = CreateInputField(dialog, "LiveVolume.Bgm", "0.0 - 1.0");
-			_settingLiveSeInput = CreateInputField(dialog, "LiveVolume.Se", "0.0 - 1.0");
-			_settingNoteSpeedInput = CreateInputField(dialog, "LiveSettingData.NoteSpeed", "1.0 - 12.0");
-			_settingTimingAdjustInput = CreateInputField(dialog, "LiveSettingData.TimingAdjustData", "-20.0 - 20.0");
+			_settingLiveBgmInput = CreateInputField(dialog, "音乐音量", "0.0 - 1.0");
+			_settingLiveSeInput = CreateInputField(dialog, "音效音量", "0.0 - 1.0");
+			_settingNoteSpeedInput = CreateInputField(dialog, "音符流速", "1.0 - 12.0");
+			_settingTimingAdjustInput = CreateInputField(dialog, "判定偏移", "-20.0 - 20.0");
 
 			RectTransform buttonRow = CreateRect("ButtonRow", dialog);
 			LayoutElement buttonRowLayout = buttonRow.gameObject.AddComponent<LayoutElement>();
@@ -312,8 +322,8 @@ namespace Sekai.CustomMusicScoreManager
 			buttonRowGroup.childForceExpandWidth = false;
 			buttonRowGroup.childForceExpandHeight = false;
 
-			CreateButton("CancelButton", buttonRow, "Cancel", CloseSettings, 150f, 52f);
-			CreateButton("SaveButton", buttonRow, "Save", SaveSettings, 150f, 52f);
+			CreateButton("CancelButton", buttonRow, "取消", CloseSettings, 150f, 52f);
+			CreateButton("SaveButton", buttonRow, "保存", SaveSettings, 150f, 52f);
 		}
 
 		private void OpenSettings()
@@ -362,7 +372,7 @@ namespace Sekai.CustomMusicScoreManager
 			_settingNoteSpeedInput.SetTextWithoutNotify(FormatSettingValue(liveSettingData.NoteSpeed));
 			_settingTimingAdjustInput.SetTextWithoutNotify(FormatSettingValue(liveSettingData.TimingAdjustData));
 			CloseSettings();
-			SetStatus("Saved settings.");
+			SetStatus("设置已保存。");
 		}
 
 		private static float ParseClampedSetting(string text, float min, float max, float fallback)
@@ -532,7 +542,7 @@ namespace Sekai.CustomMusicScoreManager
 				}
 			}
 			UpdateSelection(selected ?? (_items.Count > 0 ? _items[0] : null));
-			SetStatus("Loaded " + _items.Count.ToString(CultureInfo.InvariantCulture) + " score(s).");
+			SetStatus("已加载 " + _items.Count.ToString(CultureInfo.InvariantCulture) + " 个谱面。");
 		}
 
 		private RowView CreateRow(RectTransform parent, CustomMusicScoreManagerItem item)
@@ -596,7 +606,7 @@ namespace Sekai.CustomMusicScoreManager
 
 			if (!hasSelection)
 			{
-				_detailTitle.text = "Select a score";
+				_detailTitle.text = "请选择谱面";
 				_detailMeta.text = string.Empty;
 				_detailStatus.text = string.Empty;
 				ClearLoadedJacket();
@@ -608,7 +618,7 @@ namespace Sekai.CustomMusicScoreManager
 			_detailTitle.text = manifest.scoreTitle;
 			_detailMeta.text = string.Format(
 				CultureInfo.InvariantCulture,
-				"title: {0}\nid: {1}\npath: {2}\nupdated: {3:yyyy-MM-dd HH:mm}",
+				"曲名：{0}\nID：{1}\n路径：{2}\n更新：{3:yyyy-MM-dd HH:mm}",
 				manifest.title,
 				manifest.id,
 				item.Entry.RootDirectory,
@@ -630,7 +640,7 @@ namespace Sekai.CustomMusicScoreManager
 				File.Exists(entry.AudioPath),
 				File.Exists(entry.JacketPath));
 			RefreshList();
-			SetStatus("Created score.");
+			SetStatus("已创建谱面。");
 		}
 
 		private void OpenEditor()
@@ -643,7 +653,7 @@ namespace Sekai.CustomMusicScoreManager
 			CustomMusicScoreEntry entry = CustomMusicScoreStorage.LoadEntry(_selected.Entry.RootDirectory);
 			if (entry == null)
 			{
-				SetStatus("Entry could not be loaded.");
+				SetStatus("无法加载谱面。");
 				RefreshList();
 				return;
 			}
@@ -685,46 +695,46 @@ namespace Sekai.CustomMusicScoreManager
 			entry ??= CustomMusicScoreStorage.LoadEntry(_selected.Entry.RootDirectory);
 			if (entry == null)
 			{
-				SetStatus("Entry could not be loaded.");
+				SetStatus("无法加载谱面。");
 				RefreshList();
 				return;
 			}
 
 			if (!File.Exists(entry.ScorePath))
 			{
-				SetStatus("Score file not found.");
+				SetStatus("找不到谱面文件。");
 				return;
 			}
 			if (!File.Exists(entry.AudioPath))
 			{
-				SetStatus("Audio file not found.");
+				SetStatus("找不到音频文件。");
 				return;
 			}
 
 			MusicScoreMakerData scoreData = entry.LoadScore();
 			if (scoreData == null)
 			{
-				SetStatus("Score file could not be loaded.");
+				SetStatus("无法加载谱面文件。");
 				return;
 			}
 			if (!HasPlayableNotes(scoreData))
 			{
-				SetStatus("No notes to play.");
+				SetStatus("没有可游玩的音符。");
 				return;
 			}
 
-			SetStatus("Loading audio...");
+			SetStatus("正在加载音频...");
 			bool audioReady = await entry.RegisterAudioAsync(this.GetCancellationTokenOnDestroy());
 			if (!audioReady)
 			{
-				SetStatus("Audio file could not be loaded.");
+				SetStatus("无法加载音频文件。");
 				return;
 			}
 
 			FreeLiveBootData bootData = CreateDirectPlayBootData(entry, scoreData, isAuto);
 			if (bootData == null)
 			{
-				SetStatus("Live boot data could not be created.");
+				SetStatus("无法创建游玩启动数据。");
 				return;
 			}
 
@@ -732,7 +742,7 @@ namespace Sekai.CustomMusicScoreManager
 			Sekai.Core.EntryPoint.PlayMode = Sekai.Core.PlayMode.SoloLive;
 			LiveTransitioner.SafeForceFinish(null);
 			ScreenManager.Instance?.PushUIScreen(MenuScreenType.LiveLoading, false);
-			SetStatus(isAuto ? "Starting auto live..." : "Starting live...");
+			SetStatus(isAuto ? "正在开始自动游玩..." : "正在开始游玩...");
 		}
 
 		private static bool HasPlayableNotes(MusicScoreMakerData data)
@@ -857,7 +867,7 @@ namespace Sekai.CustomMusicScoreManager
 			CustomMusicScoreEntry entry = CustomMusicScoreManagerService.DuplicateEntry(_selected.Entry);
 			_selected = entry == null ? null : new CustomMusicScoreManagerItem(entry, DateTime.Now, true, File.Exists(entry.ScorePath), File.Exists(entry.AudioPath), File.Exists(entry.JacketPath));
 			RefreshList();
-			SetStatus("Duplicated score.");
+			SetStatus("已复制谱面。");
 		}
 
 		private void DeleteSelected()
@@ -902,7 +912,7 @@ namespace Sekai.CustomMusicScoreManager
 				_selected = null;
 			}
 			RefreshList();
-			SetStatus("Deleted " + title + ".");
+			SetStatus("已删除 " + title + "。");
 		}
 
 		private void ExportSelected()
@@ -915,14 +925,14 @@ namespace Sekai.CustomMusicScoreManager
 			string destination = null;
 #if UNITY_EDITOR || UNITY_STANDALONE
 			string defaultName = _selected.Entry.Manifest.scoreTitle + "_" + _selected.Entry.Manifest.id;
-			destination = SaveStandaloneFile("Export Custom Music Score", CustomMusicScoreStorage.RootDirectory, defaultName, "zip");
+			destination = SaveStandaloneFile("导出自制谱", CustomMusicScoreStorage.RootDirectory, defaultName, "zip");
 			if (string.IsNullOrEmpty(destination))
 			{
 				return;
 			}
 #endif
 			string path = CustomMusicScoreManagerService.ExportZip(_selected.Entry, destination);
-			SetStatus(string.IsNullOrEmpty(path) ? "Export failed." : "Exported: " + path);
+			SetStatus(string.IsNullOrEmpty(path) ? "导出失败。" : "已导出：" + path);
 		}
 
 		private void ImportEntry()
@@ -930,16 +940,16 @@ namespace Sekai.CustomMusicScoreManager
 #if UNITY_EDITOR || UNITY_STANDALONE
 			CustomMusicScoreEntry entry = null;
 			string path = PickStandaloneFile(
-				"Import Custom Music Score Zip",
+				"导入自制谱ZIP",
 				string.Empty,
-				new ExtensionFilter("Custom Music Score Zip", "zip"));
+				new ExtensionFilter("自制谱ZIP", "zip"));
 			if (!string.IsNullOrEmpty(path))
 			{
 				entry = CustomMusicScoreManagerService.ImportZip(path);
 			}
 			else
 			{
-				string folder = PickStandaloneFolder("Import Custom Music Score Folder", string.Empty);
+				string folder = PickStandaloneFolder("导入自制谱文件夹", string.Empty);
 				if (!string.IsNullOrEmpty(folder))
 				{
 					entry = CustomMusicScoreManagerService.ImportFolder(folder);
@@ -948,13 +958,13 @@ namespace Sekai.CustomMusicScoreManager
 			ApplyImportedEntry(entry);
 #elif UNITY_ANDROID || UNITY_IOS
 			PickNativeFile(
-				"Import Custom Music Score Zip",
-				"Import canceled or failed.",
+				"导入自制谱ZIP",
+				"导入已取消或失败。",
 				path => ApplyImportedEntry(CustomMusicScoreManagerService.ImportZip(path)),
 				"zip");
 			return;
 #else
-			SetStatus("Runtime import uses Native File Picker on Android/iOS. Copy scores manually on this platform.");
+			SetStatus("当前平台暂不支持运行时导入，请手动复制谱面。");
 			return;
 #endif
         }
@@ -965,11 +975,11 @@ namespace Sekai.CustomMusicScoreManager
 			{
 				_selected = new CustomMusicScoreManagerItem(entry, DateTime.Now, true, File.Exists(entry.ScorePath), File.Exists(entry.AudioPath), File.Exists(entry.JacketPath));
 				RefreshList();
-				SetStatus("Imported score.");
+				SetStatus("已导入谱面。");
 			}
 			else
 			{
-				SetStatus("Import canceled or failed.");
+				SetStatus("导入已取消或失败。");
 			}
 		}
 
@@ -982,26 +992,26 @@ namespace Sekai.CustomMusicScoreManager
 
 #if UNITY_EDITOR || UNITY_STANDALONE
 			string path = PickStandaloneFile(
-				"Replace Audio File",
+				"替换音频文件",
 				string.Empty,
-				new ExtensionFilter("Audio Files", "ogg", "mp3", "wav"));
+				new ExtensionFilter("音频文件", "ogg", "mp3", "wav"));
 			if (string.IsNullOrEmpty(path))
 			{
-				SetStatus("Audio replacement canceled.");
+				SetStatus("已取消替换音频。");
 				return;
 			}
 
-			ReplaceSelectedFile(path, CustomMusicScoreManagerService.ReplaceAudioFile, "Replaced audio");
+			ReplaceSelectedFile(path, CustomMusicScoreManagerService.ReplaceAudioFile, "已替换音频");
 #elif UNITY_ANDROID || UNITY_IOS
 			PickNativeFile(
-				"Replace Audio File",
-				"Audio replacement canceled.",
-				path => ReplaceSelectedFile(path, CustomMusicScoreManagerService.ReplaceAudioFile, "Replaced audio"),
+				"替换音频文件",
+				"已取消替换音频。",
+				path => ReplaceSelectedFile(path, CustomMusicScoreManagerService.ReplaceAudioFile, "已替换音频"),
 				"ogg",
 				"mp3",
 				"wav");
 #else
-			SetStatus("Runtime file selection uses Native File Picker on Android/iOS. Copy the audio file manually on this platform.");
+			SetStatus("当前平台暂不支持选择音频文件，请手动复制。");
 #endif
 		}
 
@@ -1014,26 +1024,26 @@ namespace Sekai.CustomMusicScoreManager
 
 #if UNITY_EDITOR || UNITY_STANDALONE
 			string path = PickStandaloneFile(
-				"Replace Jacket File",
+				"替换封面文件",
 				string.Empty,
-				new ExtensionFilter("Image Files", "png", "jpg", "jpeg"));
+				new ExtensionFilter("图片文件", "png", "jpg", "jpeg"));
 			if (string.IsNullOrEmpty(path))
 			{
-				SetStatus("Jacket replacement canceled.");
+				SetStatus("已取消替换封面。");
 				return;
 			}
 
-			ReplaceSelectedFile(path, CustomMusicScoreManagerService.ReplaceJacketFile, "Replaced jacket");
+			ReplaceSelectedFile(path, CustomMusicScoreManagerService.ReplaceJacketFile, "已替换封面");
 #elif UNITY_ANDROID || UNITY_IOS
 			PickNativeFile(
-				"Replace Jacket File",
-				"Jacket replacement canceled.",
-				path => ReplaceSelectedFile(path, CustomMusicScoreManagerService.ReplaceJacketFile, "Replaced jacket"),
+				"替换封面文件",
+				"已取消替换封面。",
+				path => ReplaceSelectedFile(path, CustomMusicScoreManagerService.ReplaceJacketFile, "已替换封面"),
 				"png",
 				"jpg",
 				"jpeg");
 #else
-			SetStatus("Runtime file selection uses Native File Picker on Android/iOS. Copy the jacket file manually on this platform.");
+			SetStatus("当前平台暂不支持选择封面文件，请手动复制。");
 #endif
 		}
 
@@ -1046,25 +1056,25 @@ namespace Sekai.CustomMusicScoreManager
 
 #if UNITY_EDITOR || UNITY_STANDALONE
 			string path = PickStandaloneFile(
-				"Replace Score File",
+				"替换谱面文件",
 				string.Empty,
-				new ExtensionFilter("Score Files", "json", "txt"));
+				new ExtensionFilter("谱面文件", "json", "txt"));
 			if (string.IsNullOrEmpty(path))
 			{
-				SetStatus("Score replacement canceled.");
+				SetStatus("已取消替换谱面。");
 				return;
 			}
 
-			ReplaceSelectedFile(path, CustomMusicScoreManagerService.ReplaceScoreFile, "Replaced score");
+			ReplaceSelectedFile(path, CustomMusicScoreManagerService.ReplaceScoreFile, "已替换谱面");
 #elif UNITY_ANDROID || UNITY_IOS
 			PickNativeFile(
-				"Replace Score File",
-				"Score replacement canceled.",
-				path => ReplaceSelectedFile(path, CustomMusicScoreManagerService.ReplaceScoreFile, "Replaced score"),
+				"替换谱面文件",
+				"已取消替换谱面。",
+				path => ReplaceSelectedFile(path, CustomMusicScoreManagerService.ReplaceScoreFile, "已替换谱面"),
 				"json",
 				"txt");
 #else
-			SetStatus("Runtime file selection uses Native File Picker on Android/iOS. Copy the score file manually on this platform.");
+			SetStatus("当前平台暂不支持选择谱面文件，请手动复制。");
 #endif
 		}
 
@@ -1092,7 +1102,7 @@ namespace Sekai.CustomMusicScoreManager
 		{
 			if (NativeFilePicker.IsFilePickerBusy())
 			{
-				SetStatus("File picker is already open.");
+				SetStatus("文件选择器已经打开。");
 				return;
 			}
 
@@ -1152,7 +1162,7 @@ namespace Sekai.CustomMusicScoreManager
 				CustomMusicScoreEntry entry = replaceFile(_selected.Entry, sourcePath);
 				if (entry == null)
 				{
-					SetStatus("Replacement failed.");
+					SetStatus("替换失败。");
 					return;
 				}
 
@@ -1175,7 +1185,7 @@ namespace Sekai.CustomMusicScoreManager
 		private void SaveSelectedManifest()
 		{
 			CustomMusicScoreEntry savedEntry = SaveSelectedManifestFromForm(refreshList: true);
-			SetStatus(savedEntry != null ? "Saved manifest." : "Save manifest failed.");
+			SetStatus(savedEntry != null ? "配置已保存。" : "保存配置失败。");
 		}
 
 		private CustomMusicScoreEntry SaveSelectedManifestFromForm(bool refreshList)
@@ -1292,7 +1302,7 @@ namespace Sekai.CustomMusicScoreManager
 			_difficultyIndex = index;
 			if (_difficultyLabel != null)
 			{
-				_difficultyLabel.text = DifficultyTypes[index].ToUpperInvariant();
+				_difficultyLabel.text = DifficultyDisplayNames[index];
 			}
 		}
 
@@ -1378,7 +1388,7 @@ namespace Sekai.CustomMusicScoreManager
 			vertical.childControlWidth = true;
 			vertical.childControlHeight = false;
 
-			TextMeshProUGUI labelText = CreateText("Label", root.transform, "Difficulty", 23, FontStyles.Bold, TextAlignmentOptions.Left);
+			TextMeshProUGUI labelText = CreateText("Label", root.transform, "难度", 23, FontStyles.Bold, TextAlignmentOptions.Left);
 			labelText.rectTransform.sizeDelta = new Vector2(0f, 30f);
 
 			GameObject fieldObject = new GameObject("Field", typeof(RectTransform), typeof(Image), typeof(Button));
@@ -1403,7 +1413,7 @@ namespace Sekai.CustomMusicScoreManager
 			_difficultyLabel.raycastTarget = false;
 			SetStretchOffsets(_difficultyLabel.rectTransform, 18f, 0f, 124f, 0f);
 
-			TextMeshProUGUI hint = CreateText("Hint", _difficultyFieldRect, "Cycle", 19, FontStyles.Bold, TextAlignmentOptions.Center);
+			TextMeshProUGUI hint = CreateText("Hint", _difficultyFieldRect, "切换", 19, FontStyles.Bold, TextAlignmentOptions.Center);
 			hint.raycastTarget = false;
 			SetAnchor(hint.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(1f, 0.5f), new Vector2(-14f, 0f), new Vector2(104f, 0f));
 			SetDifficultyDropdownValue("master");
@@ -1476,7 +1486,7 @@ namespace Sekai.CustomMusicScoreManager
 				actionButton.colors = colors;
 				actionButton.onClick.AddListener(onClick);
 
-				TextMeshProUGUI actionLabel = CreateText("Label", actionRect, "Select", 20, FontStyles.Bold, TextAlignmentOptions.Center);
+				TextMeshProUGUI actionLabel = CreateText("Label", actionRect, "选择", 20, FontStyles.Bold, TextAlignmentOptions.Center);
 				actionLabel.enableWordWrapping = false;
 				actionLabel.overflowMode = TextOverflowModes.Ellipsis;
 				Stretch(actionLabel.rectTransform);

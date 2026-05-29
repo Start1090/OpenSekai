@@ -23,21 +23,21 @@ namespace Sekai.CustomMusicScoreManager
 			{
 				if (!HasManifest)
 				{
-					return "manifest missing";
+					return "缺少配置";
 				}
 				if (!HasScore)
 				{
-					return "score missing";
+					return "缺少谱面";
 				}
 				if (!HasAudio)
 				{
-					return "audio missing";
+					return "缺少音频";
 				}
 				if (!HasJacket)
 				{
-					return "jacket missing";
+					return "缺少封面";
 				}
-				return "ready";
+				return "就绪";
 			}
 		}
 
