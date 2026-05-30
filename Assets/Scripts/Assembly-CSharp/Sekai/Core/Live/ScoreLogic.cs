@@ -4,6 +4,8 @@ namespace Sekai.Core.Live
 {
 	public class ScoreLogic
 	{
+		private const int DefaultTotalScore = 1000000;
+
 		private readonly LiveBundleBuildData liveBundleBuildData;
 		private MasterPlayLevelScore scoreInfo;
 
@@ -34,7 +36,7 @@ namespace Sekai.Core.Live
 			score.totalComboCount = totalCombo;
 			score.life = liveBundleBuildData != null && liveBundleBuildData.Life > 0 ? liveBundleBuildData.Life : 1000;
 			score.rank = ScoreRank.D;
-			BaseNoteScore = totalCombo > 0 ? UnityEngine.Mathf.Max(1, 1000000 / totalCombo) : 0;
+			BaseNoteScore = totalCombo > 0 ? UnityEngine.Mathf.Max(1, DefaultTotalScore / totalCombo) : 0;
 		}
 
 		public virtual void ExcuteEvent(EventBase eventBase)
@@ -137,10 +139,15 @@ namespace Sekai.Core.Live
 				return;
 			}
 
-			score.rank = score.totalScore >= 900000 ? ScoreRank.S
-				: score.totalScore >= 800000 ? ScoreRank.A
-				: score.totalScore >= 700000 ? ScoreRank.B
-				: score.totalScore >= 600000 ? ScoreRank.C
+			// OpenSekai fallback for custom scores: keep rank thresholds aligned with ScoreGaugeCalculator.Create(1000000).
+			int rankS = UnityEngine.Mathf.FloorToInt(ScoreGaugeCalculator.RankRateS * DefaultTotalScore);
+			int rankA = UnityEngine.Mathf.FloorToInt(ScoreGaugeCalculator.RankRateA * DefaultTotalScore);
+			int rankB = UnityEngine.Mathf.FloorToInt(ScoreGaugeCalculator.RankRateB * DefaultTotalScore);
+			int rankC = UnityEngine.Mathf.FloorToInt(ScoreGaugeCalculator.RankRateC * DefaultTotalScore);
+			score.rank = score.totalScore >= rankS ? ScoreRank.S
+				: score.totalScore >= rankA ? ScoreRank.A
+				: score.totalScore >= rankB ? ScoreRank.B
+				: score.totalScore >= rankC ? ScoreRank.C
 				: ScoreRank.D;
 		}
 	}
