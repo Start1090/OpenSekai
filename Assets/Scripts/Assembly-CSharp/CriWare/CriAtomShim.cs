@@ -478,6 +478,10 @@ namespace CriWare
 			public GameObject GameObject;
 			public AudioSource Source;
 			public bool Stopped;
+			public float BaseTimeSeconds;
+			public double BaseDspTime;
+			public float PausedTimeSeconds;
+			public bool Paused;
 		}
 
 		private static readonly Dictionary<uint, PlaybackState> playbacks = new Dictionary<uint, PlaybackState>();
@@ -521,21 +525,29 @@ namespace CriWare
 			source.spatialBlend = 0f;
 			source.clip = clip;
 			source.volume = Mathf.Max(0f, volume);
+			float sourceStartTimeSeconds = 0f;
 			if (startTimeSeconds > 0f && startTimeSeconds < clip.length)
 			{
 				source.time = startTimeSeconds;
+				sourceStartTimeSeconds = startTimeSeconds;
 			}
 
-			playbacks[id] = new PlaybackState
+			PlaybackState state = new PlaybackState
 			{
 				GameObject = playbackObject,
 				Source = source,
-				Stopped = false
+				Stopped = false,
+				BaseTimeSeconds = sourceStartTimeSeconds,
+				BaseDspTime = AudioSettings.dspTime,
+				PausedTimeSeconds = sourceStartTimeSeconds,
+				Paused = false
 			};
+			playbacks[id] = state;
 
 			EnsureAudioListener();
+			state.BaseDspTime = AudioSettings.dspTime;
 			source.Play();
-			float destroyDelay = Math.Max(0.1f, clip.length - source.time + 0.1f);
+			float destroyDelay = Math.Max(0.1f, clip.length - sourceStartTimeSeconds + 0.1f);
 			UnityEngine.Object.Destroy(playbackObject, destroyDelay);
 			return new CriAtomExPlayback(id);
 		}
@@ -559,6 +571,11 @@ namespace CriWare
 				return CriAtomExPlayback.Status.PlayEnd;
 			}
 
+			if (state.Paused)
+			{
+				return CriAtomExPlayback.Status.Playing;
+			}
+
 			return state.Source.isPlaying ? CriAtomExPlayback.Status.Playing : CriAtomExPlayback.Status.PlayEnd;
 		}
 
@@ -569,7 +586,7 @@ namespace CriWare
 				return 0L;
 			}
 
-			return (long)(state.Source.time * 1000f);
+			return (long)(GetDspPlaybackTimeSeconds(state) * 1000f);
 		}
 
 		public static void GetTimeAndScaleSyncedWithAudio(uint id, out long playbackTime, out float timeScale)
@@ -581,7 +598,7 @@ namespace CriWare
 				return;
 			}
 
-			playbackTime = (long)(state.Source.time * 1000f);
+			playbackTime = (long)(GetDspPlaybackTimeSeconds(state) * 1000f);
 			timeScale = state.Source.pitch;
 			if (timeScale <= 0f)
 			{
@@ -612,6 +629,11 @@ namespace CriWare
 		{
 			if (id != 0 && playbacks.TryGetValue(id, out PlaybackState state) && state.Source != null)
 			{
+				if (!state.Paused)
+				{
+					state.PausedTimeSeconds = GetDspPlaybackTimeSeconds(state);
+					state.Paused = true;
+				}
 				state.Source.Pause();
 			}
 		}
@@ -620,8 +642,44 @@ namespace CriWare
 		{
 			if (id != 0 && playbacks.TryGetValue(id, out PlaybackState state) && state.Source != null)
 			{
+				if (state.Paused)
+				{
+					state.BaseTimeSeconds = state.PausedTimeSeconds;
+					state.BaseDspTime = AudioSettings.dspTime;
+					state.Paused = false;
+				}
 				state.Source.UnPause();
 			}
+		}
+
+		// OpenSekai: AudioSource.time can advance in large chunks on some Android devices.
+		// Use dspTime as the continuous playback clock while AudioSource still owns actual audio output.
+		private static float GetDspPlaybackTimeSeconds(PlaybackState state)
+		{
+			if (state == null || state.Source == null)
+			{
+				return 0f;
+			}
+			if (state.Paused)
+			{
+				return state.PausedTimeSeconds;
+			}
+
+			float pitch = state.Source.pitch;
+			if (pitch <= 0f)
+			{
+				pitch = 1f;
+			}
+
+			double elapsedSeconds = (AudioSettings.dspTime - state.BaseDspTime) * pitch;
+			float playbackTimeSeconds = state.BaseTimeSeconds + (float)Math.Max(0d, elapsedSeconds);
+			AudioClip clip = state.Source.clip;
+			if (clip != null && clip.length > 0f)
+			{
+				playbackTimeSeconds = Mathf.Min(playbackTimeSeconds, clip.length);
+			}
+
+			return Mathf.Max(0f, playbackTimeSeconds);
 		}
 
 		private static uint AllocatePlaybackId()
