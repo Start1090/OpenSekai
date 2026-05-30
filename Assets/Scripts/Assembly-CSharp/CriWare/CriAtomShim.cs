@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Stopwatch = System.Diagnostics.Stopwatch;
 using System.IO;
 using AcbDecoder;
 using UnityEngine;
@@ -479,12 +480,13 @@ namespace CriWare
 			public AudioSource Source;
 			public bool Stopped;
 			public float BaseTimeSeconds;
-			public double BaseDspTime;
+			public long BaseStopwatchTicks;
 			public float PausedTimeSeconds;
 			public bool Paused;
 		}
 
 		private static readonly Dictionary<uint, PlaybackState> playbacks = new Dictionary<uint, PlaybackState>();
+		private static readonly double StopwatchSecondsPerTick = 1d / Stopwatch.Frequency;
 		private static GameObject root;
 		private static AudioListener fallbackAudioListener;
 		private static uint nextPlaybackId = 1;
@@ -538,14 +540,14 @@ namespace CriWare
 				Source = source,
 				Stopped = false,
 				BaseTimeSeconds = sourceStartTimeSeconds,
-				BaseDspTime = AudioSettings.dspTime,
+				BaseStopwatchTicks = Stopwatch.GetTimestamp(),
 				PausedTimeSeconds = sourceStartTimeSeconds,
 				Paused = false
 			};
 			playbacks[id] = state;
 
 			EnsureAudioListener();
-			state.BaseDspTime = AudioSettings.dspTime;
+			state.BaseStopwatchTicks = Stopwatch.GetTimestamp();
 			source.Play();
 			float destroyDelay = Math.Max(0.1f, clip.length - sourceStartTimeSeconds + 0.1f);
 			UnityEngine.Object.Destroy(playbackObject, destroyDelay);
@@ -586,7 +588,7 @@ namespace CriWare
 				return 0L;
 			}
 
-			return (long)(GetDspPlaybackTimeSeconds(state) * 1000f);
+			return (long)(GetMonotonicPlaybackTimeSeconds(state) * 1000f);
 		}
 
 		public static void GetTimeAndScaleSyncedWithAudio(uint id, out long playbackTime, out float timeScale)
@@ -598,7 +600,7 @@ namespace CriWare
 				return;
 			}
 
-			playbackTime = (long)(GetDspPlaybackTimeSeconds(state) * 1000f);
+			playbackTime = (long)(GetMonotonicPlaybackTimeSeconds(state) * 1000f);
 			timeScale = state.Source.pitch;
 			if (timeScale <= 0f)
 			{
@@ -631,7 +633,7 @@ namespace CriWare
 			{
 				if (!state.Paused)
 				{
-					state.PausedTimeSeconds = GetDspPlaybackTimeSeconds(state);
+					state.PausedTimeSeconds = GetMonotonicPlaybackTimeSeconds(state);
 					state.Paused = true;
 				}
 				state.Source.Pause();
@@ -645,16 +647,16 @@ namespace CriWare
 				if (state.Paused)
 				{
 					state.BaseTimeSeconds = state.PausedTimeSeconds;
-					state.BaseDspTime = AudioSettings.dspTime;
+					state.BaseStopwatchTicks = Stopwatch.GetTimestamp();
 					state.Paused = false;
 				}
 				state.Source.UnPause();
 			}
 		}
 
-		// OpenSekai: AudioSource.time can advance in large chunks on some Android devices.
-		// Use dspTime as the continuous playback clock while AudioSource still owns actual audio output.
-		private static float GetDspPlaybackTimeSeconds(PlaybackState state)
+		// OpenSekai: AudioSource.time and dspTime can advance in large chunks on some Android devices.
+		// Use a process monotonic clock for visual sync while AudioSource still owns actual audio output.
+		private static float GetMonotonicPlaybackTimeSeconds(PlaybackState state)
 		{
 			if (state == null || state.Source == null)
 			{
@@ -671,7 +673,7 @@ namespace CriWare
 				pitch = 1f;
 			}
 
-			double elapsedSeconds = (AudioSettings.dspTime - state.BaseDspTime) * pitch;
+			double elapsedSeconds = (Stopwatch.GetTimestamp() - state.BaseStopwatchTicks) * StopwatchSecondsPerTick * pitch;
 			float playbackTimeSeconds = state.BaseTimeSeconds + (float)Math.Max(0d, elapsedSeconds);
 			AudioClip clip = state.Source.clip;
 			if (clip != null && clip.length > 0f)

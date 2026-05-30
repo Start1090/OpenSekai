@@ -1247,14 +1247,7 @@ namespace Sekai
 
 	internal sealed class AudioSyncedUnityTimer
 	{
-		private const long ReferenceAudioTimeThresholdMs = 99L;
-		private const long SyncCorrectionThresholdMs = 63L;
-		private const long MaxLeadAfterCorrectionMs = 62L;
-
 		private readonly CriAtomExPlayback playback;
-		private long referenceAudioTimeMs = -1L;
-		private float referenceUnityTime = -1f;
-		private bool isWaitingForAudioTimeUpdate;
 
 		public long PlaybackTime { get; private set; } = -1L;
 
@@ -1269,49 +1262,7 @@ namespace Sekai
 		{
 			playback.GetTimeAndScaleSyncedWithAudio(out long audioTimeMs, out float timeScale);
 			DebugAudioSyncedTime = audioTimeMs;
-			if (audioTimeMs <= ReferenceAudioTimeThresholdMs)
-			{
-				PlaybackTime = audioTimeMs;
-				return;
-			}
-
-			if (referenceAudioTimeMs < 0L)
-			{
-				referenceAudioTimeMs = audioTimeMs;
-				referenceUnityTime = unityTime;
-			}
-
-			if (isWaitingForAudioTimeUpdate)
-			{
-				long previousPlaybackTime = PlaybackTime;
-				referenceAudioTimeMs = audioTimeMs;
-				referenceUnityTime = unityTime;
-				if (audioTimeMs > previousPlaybackTime)
-				{
-					PlaybackTime = audioTimeMs;
-					isWaitingForAudioTimeUpdate = false;
-				}
-				return;
-			}
-
-			float elapsedMs = (unityTime - referenceUnityTime) * timeScale * 1000f;
-			long estimatedDeltaMs = float.IsNaN(elapsedMs) || float.IsInfinity(elapsedMs) ? 0L : (long)elapsedMs;
-			long estimatedAudioTimeMs = referenceAudioTimeMs + estimatedDeltaMs;
-			if (estimatedAudioTimeMs - audioTimeMs >= SyncCorrectionThresholdMs)
-			{
-				PlaybackTime = audioTimeMs + MaxLeadAfterCorrectionMs;
-				isWaitingForAudioTimeUpdate = true;
-			}
-			else if (audioTimeMs - estimatedAudioTimeMs >= SyncCorrectionThresholdMs)
-			{
-				PlaybackTime = audioTimeMs;
-				referenceAudioTimeMs = audioTimeMs;
-				referenceUnityTime = unityTime;
-			}
-			else
-			{
-				PlaybackTime = estimatedAudioTimeMs;
-			}
+			PlaybackTime = audioTimeMs;
 		}
 	}
 }
