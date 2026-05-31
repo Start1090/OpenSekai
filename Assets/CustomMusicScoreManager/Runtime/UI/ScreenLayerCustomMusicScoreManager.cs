@@ -922,17 +922,22 @@ namespace Sekai.CustomMusicScoreManager
 				return;
 			}
 
-			string destination = null;
 #if UNITY_EDITOR || UNITY_STANDALONE
 			string defaultName = _selected.Entry.Manifest.scoreTitle + "_" + _selected.Entry.Manifest.id;
-			destination = SaveStandaloneFile("导出自制谱", CustomMusicScoreStorage.RootDirectory, defaultName, "zip");
+			string destination = SaveStandaloneFile("导出自制谱", CustomMusicScoreStorage.RootDirectory, defaultName, "zip");
 			if (string.IsNullOrEmpty(destination))
 			{
 				return;
 			}
-#endif
+
 			string path = CustomMusicScoreManagerService.ExportZip(_selected.Entry, destination);
 			SetStatus(string.IsNullOrEmpty(path) ? "导出失败。" : "已导出：" + path);
+#elif UNITY_ANDROID || UNITY_IOS
+			ExportSelectedNative();
+#else
+			string path = CustomMusicScoreManagerService.ExportZip(_selected.Entry);
+			SetStatus(string.IsNullOrEmpty(path) ? "导出失败。" : "已导出：" + path);
+#endif
 		}
 
 		private void ImportEntry()
@@ -1098,6 +1103,39 @@ namespace Sekai.CustomMusicScoreManager
 #endif
 
 #if UNITY_ANDROID || UNITY_IOS
+		private void ExportSelectedNative()
+		{
+			if (NativeFilePicker.IsFilePickerBusy())
+			{
+				SetStatus("文件选择器已经打开。");
+				return;
+			}
+
+			string path = CustomMusicScoreManagerService.ExportZip(_selected.Entry);
+			if (string.IsNullOrEmpty(path))
+			{
+				SetStatus("导出失败。");
+				return;
+			}
+
+			if (!NativeFilePicker.CanExportFiles())
+			{
+				SetStatus("当前平台不支持文件导出，已导出到：" + path);
+				return;
+			}
+
+			SetStatus("请选择导出位置...");
+			NativeFilePicker.ExportFile(path, success =>
+			{
+				if (this == null)
+				{
+					return;
+				}
+
+				SetStatus(success ? "已导出：" + path : "导出已取消或失败。");
+			});
+		}
+
 		private void PickNativeFile(string title, string cancelStatus, Action<string> onPicked, params string[] extensions)
 		{
 			if (NativeFilePicker.IsFilePickerBusy())

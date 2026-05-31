@@ -153,7 +153,7 @@ namespace Sekai.CustomMusicScoreManager
 				return null;
 			}
 
-			string tempRoot = Path.Combine(Path.GetTempPath(), "OpenSekaiCustomScore_" + Guid.NewGuid().ToString("N"));
+			string tempRoot = CreateTemporaryPath("OpenSekaiCustomScore_");
 			Directory.CreateDirectory(tempRoot);
 			try
 			{
@@ -259,7 +259,7 @@ namespace Sekai.CustomMusicScoreManager
 			string readSourcePath = sourcePath;
 			if (IsPathInsideDirectory(entry.RootDirectory, sourcePath))
 			{
-				tempCopyPath = Path.Combine(Path.GetTempPath(), "OpenSekaiCustomScoreFile_" + Guid.NewGuid().ToString("N") + extension);
+				tempCopyPath = CreateTemporaryPath("OpenSekaiCustomScoreFile_", extension);
 				File.Copy(sourcePath, tempCopyPath, true);
 				readSourcePath = tempCopyPath;
 			}
@@ -395,7 +395,7 @@ namespace Sekai.CustomMusicScoreManager
 			string tempCopyPath = null;
 			if (IsPathInsideDirectory(entry.RootDirectory, sourcePath))
 			{
-				tempCopyPath = Path.Combine(Path.GetTempPath(), "OpenSekaiCustomScoreFile_" + Guid.NewGuid().ToString("N") + extension);
+				tempCopyPath = CreateTemporaryPath("OpenSekaiCustomScoreFile_", extension);
 				File.Copy(sourcePath, tempCopyPath, true);
 				copySourcePath = tempCopyPath;
 			}
@@ -699,6 +699,13 @@ namespace Sekai.CustomMusicScoreManager
 			string normalizedDirectory = Path.GetFullPath(directory).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
 			string normalizedPath = Path.GetFullPath(path);
 			return normalizedPath.StartsWith(normalizedDirectory, StringComparison.OrdinalIgnoreCase);
+		}
+
+		private static string CreateTemporaryPath(string prefix, string extension = null)
+		{
+			string tempDirectory = Path.Combine(Application.temporaryCachePath, "CustomMusicScoreManager");
+			Directory.CreateDirectory(tempDirectory);
+			return Path.Combine(tempDirectory, prefix + Guid.NewGuid().ToString("N") + (extension ?? string.Empty));
 		}
 
 		private static string SanitizeFileName(string value)
