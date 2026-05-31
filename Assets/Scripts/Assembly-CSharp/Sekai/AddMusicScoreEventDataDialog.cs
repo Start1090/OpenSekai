@@ -167,7 +167,7 @@ namespace Sekai
 				SetActive(_dropdown, false);
 				break;
 			case MusicScoreEventType.HighSpeed:
-				SetMessageWording("MSG_CHANGE_HIGH_SPEED_AT_TIMING", "指定したタイミングでハイスピードを変更します。");
+				SetMessageWording("MSG_CHANGE_HIGH_SPEED_AT_TIMING");
 				SetupInputField(FormatHighSpeedForInput(initialHighSpeed ?? float.Parse(DEFAULT_HIGH_SPEED_VALUE, CultureInfo.InvariantCulture)), TMP_InputField.ContentType.DecimalNumber, 0);
 				SetActive(_slashText, false);
 				SetActive(_dropdown, false);

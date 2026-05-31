@@ -10,6 +10,8 @@ namespace Sekai.MusicScoreMaker.Ingame.Views
 	{
 		private const float DefaultBpm = 120f;
 
+		private const float DefaultHighSpeed = 1f;
+
 		private const string DefaultTimeSignatureText = "4/4";
 
 		[SerializeField]
@@ -100,7 +102,7 @@ namespace Sekai.MusicScoreMaker.Ingame.Views
 			}
 			ClearReverseLookupMaps();
 			long focusTicks = MusicScoreMakerUtility.GetFocusTicks();
-			Dictionary<long, List<MusicScoreEventData>> groupedEvents = GroupEventsByTicksAndGetFocusEventValues(MusicScoreMakerData.MusicScoreEventDataList, focusTicks, out float focusBpm, out string focusTimeSignatureText);
+			Dictionary<long, List<MusicScoreEventData>> groupedEvents = GroupEventsByTicksAndGetFocusEventValues(MusicScoreMakerData.MusicScoreEventDataList, focusTicks, out float focusBpm, out float focusHighSpeed, out string focusTimeSignatureText);
 			Vector2 parentSize = GetParentSize();
 			_existingTicksSetCache.Clear();
 			foreach (KeyValuePair<long, List<MusicScoreEventData>> pair in groupedEvents)
@@ -143,7 +145,7 @@ namespace Sekai.MusicScoreMaker.Ingame.Views
 				}
 				UpdateBalloonForTicks(pair.Key, pair.Value, startTicks, endTicks, parentSize, MusicScoreMakerData);
 			}
-			UpdateFocusTicksBalloon(focusTicks, focusBpm, focusTimeSignatureText, startTicks, endTicks, parentSize);
+			UpdateFocusTicksBalloon(focusTicks, focusBpm, focusHighSpeed, focusTimeSignatureText, startTicks, endTicks, parentSize);
 		}
 
 		private static bool HasVisibleBalloonEvent(List<MusicScoreEventData> events)
@@ -158,7 +160,7 @@ namespace Sekai.MusicScoreMaker.Ingame.Views
 				{
 					continue;
 				}
-				if (eventData.eventType == MusicScoreEventType.BPM || eventData.eventType == MusicScoreEventType.TimeSignature)
+				if (eventData.eventType == MusicScoreEventType.BPM || eventData.eventType == MusicScoreEventType.HighSpeed || eventData.eventType == MusicScoreEventType.TimeSignature)
 				{
 					return true;
 				}
@@ -166,7 +168,7 @@ namespace Sekai.MusicScoreMaker.Ingame.Views
 			return false;
 		}
 
-		private void UpdateFocusTicksBalloon(long focusTicks, float focusBpm, string focusTimeSignatureText, long startTicks, long endTicks, Vector2 parentSize)
+		private void UpdateFocusTicksBalloon(long focusTicks, float focusBpm, float focusHighSpeed, string focusTimeSignatureText, long startTicks, long endTicks, Vector2 parentSize)
 		{
 			if (focusTicks < startTicks || focusTicks > endTicks)
 			{
@@ -179,7 +181,7 @@ namespace Sekai.MusicScoreMaker.Ingame.Views
 			}
 			_focusTicksBalloon.gameObject.SetActive(true);
 			_focusTicksBalloon.SetEventActive(MusicScoreEventType.BPM, true, -1, GetCachedFloatString(focusBpm));
-			_focusTicksBalloon.SetEventActive(MusicScoreEventType.HighSpeed, false, -1, string.Empty);
+			_focusTicksBalloon.SetEventActive(MusicScoreEventType.HighSpeed, true, -1, FormatHighSpeedText(focusHighSpeed));
 			_focusTicksBalloon.SetEventActive(MusicScoreEventType.TimeSignature, true, -1, focusTimeSignatureText);
 			UpdateFocusTicksBalloonPosition(focusTicks, startTicks, endTicks, parentSize);
 		}
@@ -235,9 +237,10 @@ namespace Sekai.MusicScoreMaker.Ingame.Views
 			_focusTicksBalloonPositionCacheValid = false;
 		}
 
-		private Dictionary<long, List<MusicScoreEventData>> GroupEventsByTicksAndGetFocusEventValues(List<MusicScoreEventData> eventDataList, long focusTicks, out float bpm, out string timeSignatureText)
+		private Dictionary<long, List<MusicScoreEventData>> GroupEventsByTicksAndGetFocusEventValues(List<MusicScoreEventData> eventDataList, long focusTicks, out float bpm, out float highSpeed, out string timeSignatureText)
 		{
 			bpm = DefaultBpm;
+			highSpeed = DefaultHighSpeed;
 			timeSignatureText = DefaultTimeSignatureText;
 			if (eventDataList == null)
 			{
@@ -248,6 +251,7 @@ namespace Sekai.MusicScoreMaker.Ingame.Views
 				group.Clear();
 			}
 			long latestBpmTicks = long.MinValue;
+			long latestHighSpeedTicks = long.MinValue;
 			long latestTimeSignatureTicks = long.MinValue;
 			foreach (MusicScoreEventData eventData in eventDataList)
 			{
@@ -270,6 +274,11 @@ namespace Sekai.MusicScoreMaker.Ingame.Views
 					bpm = ExtractFloatFromChangeValue(eventData.changeValue, DefaultBpm);
 					latestBpmTicks = eventData.ticks;
 				}
+				else if (eventData.eventType == MusicScoreEventType.HighSpeed && eventData.ticks >= latestHighSpeedTicks)
+				{
+					highSpeed = ExtractFloatFromChangeValue(eventData.changeValue, DefaultHighSpeed);
+					latestHighSpeedTicks = eventData.ticks;
+				}
 				else if (eventData.eventType == MusicScoreEventType.TimeSignature && eventData.ticks >= latestTimeSignatureTicks)
 				{
 					timeSignatureText = ExtractTimeSignatureText(eventData.changeValue);
@@ -287,9 +296,25 @@ namespace Sekai.MusicScoreMaker.Ingame.Views
 				return floatValue;
 			case double doubleValue:
 				return (float)doubleValue;
+			case decimal decimalValue:
+				return (float)decimalValue;
+			case int intValue:
+				return intValue;
+			case string text:
+				if (float.TryParse(text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float invariantParsed)
+					|| float.TryParse(text, out invariantParsed))
+				{
+					return invariantParsed;
+				}
+				return fallback;
 			default:
 				return fallback;
 			}
+		}
+
+		private static string FormatHighSpeedText(float value)
+		{
+			return "x" + value.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture);
 		}
 
 		private static string ExtractTimeSignatureText(object changeValue)
@@ -456,10 +481,18 @@ namespace Sekai.MusicScoreMaker.Ingame.Views
 			switch (eventData.changeValue)
 			{
 			case float floatValue:
-				return GetCachedFloatString(floatValue);
+				return eventData.eventType == MusicScoreEventType.HighSpeed ? FormatHighSpeedText(floatValue) : GetCachedFloatString(floatValue);
 			case double doubleValue:
-				return GetCachedFloatString((float)doubleValue);
+				return eventData.eventType == MusicScoreEventType.HighSpeed ? FormatHighSpeedText((float)doubleValue) : GetCachedFloatString((float)doubleValue);
+			case decimal decimalValue:
+				return eventData.eventType == MusicScoreEventType.HighSpeed ? FormatHighSpeedText((float)decimalValue) : decimalValue.ToString();
+			case int intValue:
+				return eventData.eventType == MusicScoreEventType.HighSpeed ? FormatHighSpeedText(intValue) : intValue.ToString();
 			default:
+				if (eventData.eventType == MusicScoreEventType.HighSpeed)
+				{
+					return FormatHighSpeedText(ExtractFloatFromChangeValue(eventData.changeValue, DefaultHighSpeed));
+				}
 				return eventData.changeValue.ToString();
 			}
 		}

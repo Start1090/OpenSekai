@@ -114,13 +114,7 @@ namespace Sekai.MusicScoreMaker.Ingame.Views
 				SetSegment(_bpmObject, _bpmText, active, id, showValue, ref _bpmId);
 				break;
 			case MusicScoreEventType.HighSpeed:
-				// The original client branch disables this segment in the score maker preview.
-				// Keep the hidden state here until the high-speed event UI is restored in full.
-				if (_highSpeedObject != null)
-				{
-					_highSpeedObject.SetActive(false);
-				}
-				_highSpeedId = id;
+				SetSegment(_highSpeedObject, _highSpeedText, active, id, showValue, ref _highSpeedId);
 				break;
 			case MusicScoreEventType.TimeSignature:
 				SetSegment(_timeSignatureObject, _timeSignatureText, active, id, showValue + WordingManager.Get("WORD_BAR"), ref _timeSignatureId);

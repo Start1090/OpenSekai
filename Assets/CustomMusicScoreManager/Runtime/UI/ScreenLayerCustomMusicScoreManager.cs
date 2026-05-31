@@ -1707,6 +1707,12 @@ namespace Sekai.CustomMusicScoreManager
 
 		private static string[] CreateNativeFileTypes(params string[] extensions)
 		{
+#if UNITY_ANDROID
+			// Android SAF filters by MIME rather than extension, and custom extensions
+			// such as .sus are often greyed out. Let the picker show all files and
+			// validate the selected extension in the import/replace service instead.
+			return Array.Empty<string>();
+#else
 			if (extensions == null || extensions.Length == 0)
 			{
 				return Array.Empty<string>();
@@ -1722,15 +1728,39 @@ namespace Sekai.CustomMusicScoreManager
 				}
 
 				extension = extension.Trim().TrimStart('.');
-				string fileType = NativeFilePicker.ConvertExtensionToFileType(extension);
-				if (!string.IsNullOrEmpty(fileType) && !fileTypes.Contains(fileType))
-				{
-					fileTypes.Add(fileType);
-				}
+				AddNativeFileTypesForExtension(fileTypes, extension);
 			}
 
 			return fileTypes.ToArray();
+#endif
 		}
+
+#if !UNITY_ANDROID
+		private static void AddNativeFileTypesForExtension(List<string> fileTypes, string extension)
+		{
+			if (string.IsNullOrEmpty(extension))
+			{
+				return;
+			}
+
+			if (extension.IndexOf("/", StringComparison.Ordinal) >= 0)
+			{
+				AddNativeFileType(fileTypes, extension);
+				return;
+			}
+
+			string fileType = NativeFilePicker.ConvertExtensionToFileType(extension);
+			AddNativeFileType(fileTypes, fileType);
+		}
+
+		private static void AddNativeFileType(List<string> fileTypes, string fileType)
+		{
+			if (!string.IsNullOrEmpty(fileType) && !fileTypes.Contains(fileType))
+			{
+				fileTypes.Add(fileType);
+			}
+		}
+#endif
 #endif
 
 		private void ReplaceSelectedFile(
